@@ -413,7 +413,7 @@ function _imagefield_widget_form($node, $field, &$node_field) {
       
         $form[$fieldname][$delta]['preview'] = array(
           '#type' => 'markup',
-          '#value' => theme('imagefield_image_preview', $file, '', '', array('width' => '150'), FALSE),
+          '#value' => theme('imagefield_image_preview', $file, $file['alt'], $file['title'], array('width' => '150'), FALSE),
         );
         
         $form[$fieldname][$delta]['description'] = array(
@@ -499,7 +499,7 @@ function imagefield_field_formatter($field, $item, $formatter) {
       return theme('imagecache', $formatter, $file['filepath']);
     }
   }
-  return theme('imagefield_image', $file, $item['title'], $item['alt']);
+  return theme('imagefield_image', $file, $item['alt'], $item['title']);
 
 }
 
