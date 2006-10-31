@@ -511,7 +511,8 @@ function _imagefield_file_load($fid = NULL) {
     // once file_attributes table is complete
     if (is_numeric($fid)) {
       $result = db_query('SELECT * FROM {files} WHERE fid = %d', $fid);
-      return db_fetch_array($result);
+      $file = db_fetch_array($result);
+      return ($file) ? $file : array();
     }
   }
   return array();
