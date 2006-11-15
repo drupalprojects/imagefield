@@ -324,11 +324,9 @@ function imagefield_widget($op, $node, $field, &$node_field) {
         $file['sessionid'] = count($_SESSION['imagefield'][$fieldname]);
         $_SESSION['imagefield'][$fieldname][$file['sessionid']] = $file;
       }
-        
-
       
       // Load files from preview state. before committing actions.
-      /* Don't do this until we here whether cck is going to support this...
+      /* Don't do this until we hear whether cck is going to support this...
          although it is really needed if anyother module wants to modify imagefields.
 
       if (is_array($_SESSION['imagefield'][$fieldname]) && count($_SESSION['imagefield'][$fieldname])) {
