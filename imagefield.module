@@ -465,12 +465,12 @@ function _imagefield_widget_form($node, $field, &$node_field) {
         
         $form[$fieldname][$delta]['preview'] = array(
           '#type' => 'markup',
-          '#value' => theme('imagefield_image_preview', $file, $file['alt'], $file['title'], array('width' => '150'), FALSE),
+          '#value' => theme('imagefield_image', $file, $file['alt'], $file['title'], array('width' => '150'), FALSE),
         );
         
         $form[$fieldname][$delta]['description'] = array(
           '#type' => 'markup',
-          '#value' => '<p>'. t('filename:') . $file['filename']. '</p>',
+          '#value' => '<strong>'. t('Filename:') . $file['filename']. '</strong>',
         );
 
         $form[$fieldname][$delta]['alt'] = array(
@@ -481,7 +481,7 @@ function _imagefield_widget_form($node, $field, &$node_field) {
         if ($field['widget']['custom_alt']) {
           $form[$fieldname][$delta]['alt'] = array(
             '#type' => 'textfield',
-            '#title' =>  t('alternate text'),
+            '#title' =>  t('Alternate text'),
             '#default_value' => $file['alt'],
             '#description' => t('Alternate text to be displayed if the image cannot be displayed.'),
             '#maxlength' => 255,
@@ -497,7 +497,7 @@ function _imagefield_widget_form($node, $field, &$node_field) {
         if ($field['widget']['custom_title']) {
           $form[$fieldname][$delta]['title'] = array(
             '#type' => 'textfield',
-            '#title' =>  t('title'),
+            '#title' =>  t('Title'),
             '#default_value' =>  $file['title'],
             '#description' => t('Text to be displayed on mouse overs.'),
             '#maxlength' => 255,
@@ -586,28 +586,29 @@ function _imagefield_file_load($fid = NULL) {
   return array();
 }
 
-function theme_imagefield_image_preview($file, $alt ='', $title='', $attributes = NULL, $getsize= TRUE) {
-  return '<span class="imagefield-image-preview">'. theme('imagefield_image', $file, $alt, $title, $attributes , $getsize) .'</span>';
-}
-
 function theme_imagefield_view_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
   return theme('imagefield_image', $file, $alt, $title, $attributes , $getsize);
 }
 
+
 function theme_imagefield_edit_image_row($element) {
-  $output = '<div class="imagefield-edit-preview">'. form_render($element['preview']) .'</div>';
-  $output .= '<div class="imagefield-edit-image-description">'. form_render($element['description']) .'</div>';
-  //$output .= '<div class="imagefield-edit-image-fid">'. $element['fid']['#value'] .'</div>';
+  $replace = '';
   if (isset($element['replace'])) {
-    $output .= '<div class="imagefield-edit-image-replace">'. form_render($element['replace']) .'</div>';
+    $replace .= '<div class="imagefield-edit-image-replace">'. form_render($element['replace']) .'</div>';
   }
+  $output = '<div class="imagefield-edit-preview">'. form_render($element['preview']) .'</div>';
+  $output .= '<div class="imagefield-edit-image-detail">';
   $output .= '<div class="imagefield-edit-image-flags">'. form_render($element['flags']) .'</div>';
-  $output .= '<div style="clear:both">&nbsp;</div>';
-  $output .= '<div class="imagefield-edit-image-alt">'.form_render($element['alt']).'</div>';
-  $output .= '<div class="imagefield-edit-image-title">'.form_render($element['title']).'</div>';
-  $output = '<div class="imagefield-edit-image-row">'. $output .'</div>';
-  return $output;  
+  $output .= '<div class="imagefield-edit-image-description">'. form_render($element['description']);
+  $output .= '</div>';
+  $output .= form_render($element); 
+  $output .= '</div>';
+  $output .= '<div style="clear: both; font-size: 0px;">&nbsp;</div>';
+  $output = '<div class="imagefield-edit-image-row clear-block">'. $output .'</div>';
+  $output .= $replace;
+  return $output;
 }
+
 
 function theme_imagefield_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
   $file = (array)$file;
