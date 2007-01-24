@@ -253,7 +253,7 @@ function imagefield_widget_settings($op, $widget) {
         );
         $form['imagecache']['body_preset'] = array(
           '#title' => t('Body preset'),
-          '#description' => t('Select the imagecache preset you want to handle thumbnails in the teaser.'),
+          '#description' => t('Select the imagecache preset you want to handle thumbnails in the body.'),
           '#type' => 'select',
           '#options' =>  $options,
           '#default_value' => $widget['body_preset'] ? $widget['body_preset'] : 'default',
