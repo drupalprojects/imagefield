@@ -149,6 +149,7 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
       };
       break; 
 
+    // Deprecated in CCK 5.x dev
     case 'view':
       $formatter = 'default';
       if (module_exists('imagecache')) {
@@ -233,6 +234,9 @@ function imagefield_widget_settings($op, $widget) {
         '#default_value' =>  $widget['custom_title'] ? $widget['custom_title'] : 0,
         '#description' => t('Enable custom title text for images. Filename will be used if not checked.'),
       );
+
+      // if imagecache is installed and the display fields patch 
+      // isn't in cck, display the imagecache options.
       if (module_exists('imagecache')) {
         $options = array();
         $options['default'] = 'Default';
@@ -244,6 +248,14 @@ function imagefield_widget_settings($op, $widget) {
           '#type' => 'fieldset',
           '#title' => 'Imagecache Options',
         );
+        $cckversion =  db_result(db_query('SELECT schema_version FROM {system} WHERE name=\'content\''), 0 ,0);
+        if ($cckversion > 1001) {
+          $form['imagecache']['warning'] = array(
+            '#type' => 'markup',
+            '#value' => '<strong><em>Formatter Settings are now on the Display Fields tab for a content type.<br /><span class="warning">These settings will be ignored</span></em></strong>',
+            '#weight' => -1,
+          );
+        }
         $form['imagecache']['teaser_preset'] = array(
           '#title' => t('Teaser preset'),
           '#description' => t('Select the imagecache preset you want to handle thumbnails in the teaser.'),
