@@ -151,17 +151,19 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
 
     // Deprecated in CCK 5.x dev
     case 'view':
-      $formatter = 'default';
-      if (module_exists('imagecache')) {
-        $formatter = $field['widget']['body_preset'];
-        if ($teaser) {
-          $formatter = $field['widget']['teaser_preset'];
+      if (!function_exists('_content_field_view')) {
+        $formatter = 'default';
+        if (module_exists('imagecache')) {
+          $formatter = $field['widget']['body_preset'];
+          if ($teaser) {
+            $formatter = $field['widget']['teaser_preset'];
+          }
         }
+        foreach ($node_field as $delta => $item) {
+          $node_field[$delta]['view'] = content_format($field, $item, $formatter); 
+        }
+        $output = theme('field', $node, $field, $node_field, $teaser, $page); 
       }
-      foreach ($node_field as $delta => $item) {
-        $node_field[$delta]['view'] = content_format($field, $item, $formatter); 
-      }
-      $output = theme('field', $node, $field, $node_field, $teaser, $page); 
       break;
 
     // called before content.module defaults.
@@ -237,7 +239,7 @@ function imagefield_widget_settings($op, $widget) {
 
       // if imagecache is installed and the display fields patch 
       // isn't in cck, display the imagecache options.
-      if (module_exists('imagecache')) {
+      if (module_exists('imagecache') && !function_exists('_content_field_view')) {
         $options = array();
         $options['default'] = 'Default';
         $presets =  _imagecache_get_presets();
@@ -248,14 +250,6 @@ function imagefield_widget_settings($op, $widget) {
           '#type' => 'fieldset',
           '#title' => 'Imagecache Options',
         );
-        $cckversion =  db_result(db_query('SELECT schema_version FROM {system} WHERE name=\'content\''), 0 ,0);
-        if ($cckversion > 1001) {
-          $form['imagecache']['warning'] = array(
-            '#type' => 'markup',
-            '#value' => '<strong><em>Formatter Settings are now on the Display Fields tab for a content type.<br /><span class="warning">These settings will be ignored</span></em></strong>',
-            '#weight' => -1,
-          );
-        }
         $form['imagecache']['teaser_preset'] = array(
           '#title' => t('Teaser preset'),
           '#description' => t('Select the imagecache preset you want to handle thumbnails in the teaser.'),
