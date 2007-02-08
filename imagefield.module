@@ -158,18 +158,20 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
       break; 
 
     case 'view':
-      $formatter = 'default';
-      if (module_exist('imagecache')) {
-        $formatter = $field['widget']['body_preset'];
-        if ($teaser) {
-          $formatter = $field['widget']['teaser_preset'];
+      if (!function_exists('_content_field_view')) {
+        $formatter = 'default';
+        if (module_exist('imagecache')) {
+          $formatter = $field['widget']['body_preset'];
+          if ($teaser) {
+            $formatter = $field['widget']['teaser_preset'];
+          }
         }
-      }
       
-      foreach ($node_field as $delta => $item) {
-        $node_field[$delta]['view'] = content_format($field, $item, $formatter); 
+        foreach ($node_field as $delta => $item) {
+          $node_field[$delta]['view'] = content_format($field, $item, $formatter); 
+        }
+        $output = theme('field', $node, $field, $node_field, $teaser, $page);
       }
-      $output = theme('field', $node, $field, $node_field, $teaser, $page);
       break;
 
     // called before content.module defaults.
@@ -244,7 +246,7 @@ function imagefield_widget_settings($op, $widget) {
         '#description' => t('Enable custom title text for images. Filename will be used if not checked.'),
       );
 
-      if (module_exist('imagecache')) {
+      if (module_exist('imagecache') && !function_exists('_content_field_view')) {
         $options = array();
         $options['default'] = 'Default';
         $presets =  _imagecache_get_presets();
