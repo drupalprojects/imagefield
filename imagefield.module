@@ -100,7 +100,7 @@ function imagefield_file_insert($node, &$file, $field) {
   $fieldname = $field['field_name'];
   $filepath = file_create_path($field['widget']['image_path']) . '/' . $file['filename'];
 
-  if ($file = file_save_upload((object)$file, $filepath)) {
+  if (imagefield_check_directory($field['widget']['image_path']) && $file = file_save_upload((object)$file, $filepath)) {
     $file = (array)$file;
     $file['fid'] = db_next_id('{files}_fid');
     db_query("INSERT into {files} (fid, nid, filename, filepath, filemime, filesize)
@@ -230,7 +230,7 @@ function imagefield_widget_settings($op, $widget) {
         '#title' => t('Image path'), 
         '#default_value' => $widget['image_path'] ? $widget['image_path'] : '', 
         '#description' => t('Optional subdirectory within the "%dir" directory where images will be stored. Do not include trailing slash.', array('%dir' => theme('placeholder', variable_get('file_directory_path', 'files')))), 
-        '#after_build' => array('imagefield_check_directory'),
+        '#after_build' => array('imagefield_form_check_directory'),
       );
 
       $form['custom_alt'] = array(
@@ -283,21 +283,35 @@ function imagefield_widget_settings($op, $widget) {
 }
 
 /**
- * Create the image directory relative to the 'files' dir - if user specified one
- * Won't allow form submit unless the directory exists & is writable
+ * Wrapper function for imagefield_check_directory that accepts a form element
+ * to validate - if user specified one. Won't allow form submit unless the
+ * directory exists & is writable
  * 
  * @param $form_element
  *   The form element containing the name of the directory to check.
- */ 
-function imagefield_check_directory($form_element) {
+ */
+function imagefield_form_check_directory($form_element) {
   if(!empty($form_element['#value'])) {
-    // create each directory necessary if it doesn't exist
-    foreach(explode('/', $form_element['#value']) as $dir) {
-      $dirs[] = $dir;
-      file_check_directory(file_create_path(implode($dirs,'/')), FILE_CREATE_DIRECTORY, $form_element['#parents'][0]);
-    }
+    imagefield_check_directory($form_element['#value'], $form_element);
   }
   return $form_element;
+}
+
+/**
+ * Create the image directory relative to the 'files' dir recursively for every
+ * directory in the path.
+ * 
+ * @param $directory
+ *   The directory path under files to check, such as 'photo/path/here'
+ * @param $form_element
+ *   A form element to throw an error on if the directory is not writable
+ */ 
+function imagefield_check_directory($directory, $form_element = array()) {
+  foreach(explode('/', $directory) as $dir) {
+    $dirs[] = $dir;
+    file_check_directory(file_create_path(implode($dirs,'/')), FILE_CREATE_DIRECTORY, $form_element['#parents'][0]);
+  }
+  return true;
 }
 
 function _imagefield_scale_image($file, $resolution = 0) {
