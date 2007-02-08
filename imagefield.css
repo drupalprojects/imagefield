@@ -27,5 +27,33 @@ div.imagefield-edit-image-detail {
 
 div.imagefield-edit-image-flags div.form-item {
  float: right;
+ margin:0;
+ padding:0;
 }
+
+/*
+** Markup free clearing
+** Details: http://www.positioniseverything.net/easyclearing.html
+** We don't need this for 5.0 version since it's included in drupal default styling
+*/
+.clear-block:after {
+  content: ".";
+  display: block;
+  height: 0;
+  clear: both;
+  visibility: hidden;
+}
+
+.clear-block {
+  display: inline-block;
+}
+
+/* Hides from IE-mac \*/
+* html .clear-block {
+  height: 1%;
+}
+.clear-block {
+  display: block;
+}
+/* End hide from IE-mac */
 

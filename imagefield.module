@@ -25,14 +25,14 @@ function imagefield_menu($maycache) {
     foreach ($_SESSION['imagefield'] as $fieldname => $files) {
       if (is_array($files)) {
         foreach($files as $file) {
-          //if ($file['preview']) {
+          if ($file['preview']) {
             $items[] = array(
               'path' => $file['preview'],
               'callback' => '_imagefield_preview',
               'access' => TRUE,
               'type' => MENU_CALLBACK,
             );
-          //}
+          }
         }
       }
     }
@@ -346,7 +346,8 @@ function _imagefield_file_delete($file, $fieldname) {
   return file_delete($file['filepath']);
 }
 
-function _imagefield_store_temp_file($file, $field, &$node_field) {
+function _imagefield_store_temp_file($file, $field, $node_field) {
+  $fieldname = $field['field_name'];
   // Create the filepath for the image preview
   $filepath = file_create_filename($file['filename'], file_create_path($field['widget']['image_path']));
   if (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC) ==  FILE_DOWNLOADS_PRIVATE) {
@@ -393,10 +394,6 @@ function imagefield_widget($op, &$node, $field, &$node_field) {
         if (strpos($file['filemime'],'image') !== FALSE) { 
           $file = _imagefield_scale_image($file, $field['widget']['max_resolution']);
           _imagefield_store_temp_file($file, $field, $node_field);
-
-          // Add the file to the session
-          $delta = count($node_field) + count($_SESSION['imagefield'][$fieldname]);
-          $_SESSION['imagefield'][$fieldname][$delta] = $file;
         }
       }
       
