@@ -328,10 +328,8 @@ function imagefield_clear_session() {
 function imagefield_clear_field_session($fieldname) {
   if (is_array($_SESSION['imagefield'][$fieldname]) && count($_SESSION['imagefield'][$fieldname])) {
     foreach ($_SESSION['imagefield'][$fieldname] as $files) {
-      foreach ($files as $delta => $file) {
-        if (is_file($file['filepath'])) {
-          file_delete($file['filepath']);
-        }
+      if (is_file($file['filepath'])) {
+        file_delete($file['filepath']);
       }
     }
     unset($_SESSION['imagefield'][$fieldname]);
