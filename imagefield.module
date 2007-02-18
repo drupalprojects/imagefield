@@ -177,7 +177,14 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
     case 'update':
       foreach ($node_field as $delta => $item) {
         $node_field[$delta] = imagefield_file_update($node, $item, $field); 
+        // Remove non-existant files from node_field
+        if (empty($node_field[$delta])) {
+          unset($node_field[$delta]);
+        }
       }
+      // Compact deltas.
+      $node_field = array_values($node_field);
+      
       break;
 
     case 'delete':
