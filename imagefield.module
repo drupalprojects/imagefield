@@ -184,8 +184,12 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
     // called before content.module defaults.
     case 'update':
       foreach ($node_field as $delta => $item) {
-        $node_field[$delta] = imagefield_file_update($node, $item, $field); 
+        $node_field[$delta] = imagefield_file_update($node, $item, $field);
+        if (empty($node_field[$delta])) {
+          unset($node_field[$delta]);
+        }
       }
+      $node_field = array_values($node_field);
       break;
 
     case 'delete':
