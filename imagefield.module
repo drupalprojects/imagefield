@@ -159,23 +159,6 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
       };
       break; 
 
-    // Deprecated in CCK 5.x dev
-    case 'view':
-      if (!function_exists('_content_field_view')) {
-        $formatter = 'default';
-        if (module_exists('imagecache')) {
-          $formatter = $field['widget']['body_preset'];
-          if ($teaser) {
-            $formatter = $field['widget']['teaser_preset'];
-          }
-        }
-        foreach ($node_field as $delta => $item) {
-          $node_field[$delta]['view'] = content_format($field, $item, $formatter); 
-        }
-        $output = theme('field', $node, $field, $node_field, $teaser, $page); 
-      }
-      break;
-
     // called before content.module defaults.
     case 'insert':
       foreach ($node_field as  $delta => $item) {
@@ -594,15 +577,6 @@ function imagefield_field_formatter_info() {
       'field types' => array('image'),
     ),
   );
-  if (module_exists('imagecache')) {
-    $rules = _imagecache_get_presets();
-    foreach ($rules as $ruleid => $rulename) {
-       $formatters[$rulename] = array(
-         'label' => $rulename,
-         'field types' => array('image'),
-         );
-    }
-  }
   return $formatters;
 }
 
@@ -615,12 +589,6 @@ function imagefield_field_formatter($field, $item, $formatter) {
     return '';
   }
   $file = _imagefield_file_load($item['fid']);
-  if (module_exists('imagecache')) {
-    $rules = _imagecache_get_presets();
-    if (in_array($formatter, (array) $rules)) {
-      return theme('imagecache', $formatter, $file['filepath'], $item['alt'], $item['title']);
-    }
-  }
   return theme('imagefield_image', $file, $item['alt'], $item['title']);
 }
 
