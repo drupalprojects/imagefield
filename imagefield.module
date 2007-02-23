@@ -12,7 +12,16 @@
 
 function imagefield_menu($maycache) {
   $items = array();
-  if (!$maycache && $_SESSION['imagefield']) {
+  if ($maycache) {
+    $items[] = array(
+      'path' => 'imagefield/js',
+      'callback' => 'imagefield_js',
+      //'access' => user_access(),
+      'access' => TRUE,
+      'type' => MENU_CALLBACK
+    );
+  }
+  elseif ($_SESSION['imagefield']) {
     // Add handlers for previewing new uploads.
     foreach ($_SESSION['imagefield'] as $fieldname => $files) {
       if (is_array($files)) {
@@ -155,7 +164,7 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
         foreach ($node_field as $delta => $file) {
           $node_field[$delta]  = array_merge((array)$node_field[$delta], _imagefield_file_load($file['fid']));
         }
-        $output = array($fieldname => $node_field);
+        return array($fieldname => $node_field);
       };
       break; 
 
@@ -177,7 +186,6 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
       }
       // Compact deltas.
       $node_field = array_values($node_field);
-      
       break;
 
     case 'delete':
@@ -186,8 +194,8 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
       }
       break;
   }
-  return $output;
 }
+
 
 /**
  * Implementation of hook_widget_info().
@@ -206,6 +214,9 @@ function imagefield_widget_info() {
  */
 function imagefield_widget_settings($op, $widget) {
   switch ($op) {
+    case 'callbacks':
+      return array('default value' => CONTENT_CALLBACK_CUSTOM);
+
     case 'form':
       $form = array();
       $form['max_resolution'] = array (
@@ -305,7 +316,8 @@ function imagefield_form_check_directory($form_element) {
 function imagefield_check_directory($directory, $form_element = array()) {
   foreach(explode('/', $directory) as $dir) {
     $dirs[] = $dir;
-    file_check_directory(file_create_path(implode($dirs,'/')), FILE_CREATE_DIRECTORY, $form_element['#parents'][0]);
+    $path = file_create_path(implode($dirs,'/'));
+    file_check_directory($path, FILE_CREATE_DIRECTORY, $form_element['#parents'][0]);
   }
   return true;
 }
@@ -361,6 +373,9 @@ function _imagefield_file_delete($file, $fieldname) {
  */
 function imagefield_widget($op, &$node, $field, &$node_field) {
   switch ($op) {
+    case 'default value':
+           return array();
+
     case 'prepare form values':
       _imagefield_widget_prepare_form_values($node, $field, $node_field);
       break;
@@ -431,19 +446,17 @@ function _imagefield_widget_prepare_form_values(&$node, $field, &$node_field) {
   }
 }  
 
-function _imagefield_widget_validate($node, $field, $node_field) {
-  if ($field['required']) {
-    if (!count($node_field)) {
-      form_set_error($fieldname, $field['widget']['label'] .' is required.');
-    }
-  }
-}
-
 function _imagefield_widget_form($node, $field, &$node_field) {
+  drupal_add_js('misc/progress.js');
+  drupal_add_js('misc/upload.js');
+
   $fieldname = $field['field_name'];
   drupal_add_css(drupal_get_path('module', 'imagefield') .'/imagefield.css');
  
-  $form = array(); 
+  $form = array(
+    '#prefix' => '<div id="'. form_clean_id($fieldname .'-attach-wrapper') .'">',
+    '#suffix' => '</div>',
+  ); 
   $form[$fieldname] = array(
     '#type' => 'fieldset',
     '#title' => t($field['widget']['label']),
@@ -451,6 +464,25 @@ function _imagefield_widget_form($node, $field, &$node_field) {
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#tree' => TRUE,
+    '#prefix' => '<div id="'. form_clean_id($fieldname .'-attach-hide') .'">',
+    '#suffix' => '</div>',
+  );
+
+  // Some useful info for our js callback.
+  $form[$fieldname]['vid'] = array(
+    '#type' => 'hidden',
+    '#value' => $node->vid,
+    '#tree' => FALSE,
+  );
+  $form[$fieldname]['nid'] = array(
+    '#type' => 'hidden',
+    '#value' => $node->nid,
+    '#tree' => FALSE,
+  );
+  $form[$fieldname]['type'] = array(
+    '#type' => 'hidden',
+    '#value' => $node->type,
+    '#tree' => FALSE,
   );
       
   // Seperate from tree becase of that silly things won't be 
@@ -466,7 +498,7 @@ function _imagefield_widget_form($node, $field, &$node_field) {
     '#type' => 'button',
     '#value' => t('Upload'),
     '#name' => 'cck_imagefield_'.$fieldname.'_op',
-    '#attributes' => array('id' => $fieldname.'-attach-button'),
+    '#id' => form_clean_id($fieldname .'-attach-button'),
     '#tree' => FALSE,
     '#weight' => 10,
   );
@@ -557,6 +589,10 @@ function _imagefield_widget_form($node, $field, &$node_field) {
       }
     }
   }
+
+  // The class triggers the js upload behaviour.
+  $form[$fieldname.'-attach-url'] = array('#type' => 'hidden', '#value' => url('imagefield/js', NULL, NULL, TRUE), '#attributes' => array('class' => 'upload'));
+
   return $form;
 }
 
@@ -693,4 +729,52 @@ if (!function_exists('upload_file_download')) {
       }
     }
   }
+}
+
+/**
+ * Menu-callback for JavaScript-based uploads.
+ */
+function imagefield_js() {
+  // Parse fieldname from submit button.
+  $matches = array();
+  foreach(array_keys($_POST) as $key) {
+    if (preg_match('/cck_imagefield_(.*)_op/', $key, $matches)) {
+      break;
+    }
+  }
+  $fieldname = $matches[1]; 
+  
+    
+  $node = (object)$_POST;
+  // Load field data.
+  $field = content_fields($fieldname);
+  
+
+  // Load fid's stored by content.module
+  $node_field = array();
+  $values  = content_field('load', $node, $field, $node_field, FALSE, FALSE);
+  $node_field = $values[$fieldname];
+
+  // Load additional field data
+  imagefield_field('load', $node, $field, $node_field, FALSE, FALSE);
+
+  // Handle uploads and validation.
+  _imagefield_widget_prepare_form_values($node, $field, $node_field);
+  _imagefield_widget_validate($node, $field, $node_field);
+
+  // Get our new form baby, yeah tiger, get em!
+  $form = _imagefield_widget_form($node, $field, $node_field);
+
+  foreach (module_implements('form_alter') as $module) {
+    $function = $module .'_form_alter';
+    $function('imagefield_js', $form);
+  }
+  $form = form_builder('imagefield_js', $form);
+
+  $output =  theme('status_messages') . drupal_render($form);
+
+  // We send the updated file attachments form.
+  print drupal_to_js(array('status' => TRUE, 'data' => $output));
+  exit;
+
 }
