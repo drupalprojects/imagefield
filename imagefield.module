@@ -462,20 +462,27 @@ function _imagefield_widget_form($node, $field, &$node_field) {
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#tree' => TRUE,
-    '#prefix' => '<div id="'. form_clean_id($fieldname .'-attach-wrapper') .'"><div id="'. form_clean_id($fieldname .'-attach-hide') .'">',
-    '#suffix' => '</div></div>',
+    '#prefix' => '<div id="'. form_clean_id($fieldname .'-attach-wrapper') .'">',
+    '#suffix' => '</div>',
   );
       
+  $form[$fieldname]['new'] = array(
+    '#tree' => FALSE,
+    '#prefix' => '<div id="'. form_clean_id($fieldname .'-attach-hide') .'">',
+    '#suffix' => '</div>',
+    '#weight' => 100,
+  );
+    
   // Seperate from tree becase of that silly things won't be 
   // displayed if they are a child of '#type' = form issue
-  $form[$fieldname][$fieldname .'_upload'] = array(
+  $form[$fieldname]['new'][$fieldname .'_upload'] = array(
     '#type'  => 'file',
     '#description' => $field['widget']['description'],
     '#tree' => FALSE,
     '#weight' => 9,
   );
 
-  $form[$fieldname]['upload'] = array(
+  $form[$fieldname]['new']['upload'] = array(
     '#type' => 'button',
     '#value' => t('Upload'),
     '#name' => 'cck_imagefield_'.$fieldname.'_op',
@@ -484,6 +491,8 @@ function _imagefield_widget_form($node, $field, &$node_field) {
     '#weight' => 10,
   );
 
+
+  // @todo split following if block into its own function.
   // Store the file data object to be carried on.
   if (is_array($node_field) && count($node_field)) {
     foreach($node_field as $delta => $file) {
