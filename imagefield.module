@@ -145,7 +145,7 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
         foreach ($node_field as $delta => $file) {
           $node_field[$delta]  = array_merge((array)$node_field[$delta], _imagefield_file_load($file['fid']));
         }
-        $output = array($fieldname => $node_field);
+        return array($fieldname => $node_field);
       };
       break; 
 
@@ -184,7 +184,6 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
       }
       // Compact deltas.
       $node_field = array_values($node_field);
-      
       break;
 
     case 'delete':
@@ -193,7 +192,6 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
       }
       break;
   }
-  return $output;
 }
 
 /**
@@ -213,6 +211,9 @@ function imagefield_widget_info() {
  */
 function imagefield_widget_settings($op, $widget) {
   switch ($op) {
+    case 'callbacks':
+      return array('default value' => CONTENT_CALLBACK_CUSTOM);
+
     case 'form':
       $form = array();
       $form['max_resolution'] = array (
@@ -309,7 +310,8 @@ function imagefield_form_check_directory($form_element) {
 function imagefield_check_directory($directory, $form_element = array()) {
   foreach(explode('/', $directory) as $dir) {
     $dirs[] = $dir;
-    file_check_directory(file_create_path(implode($dirs,'/')), FILE_CREATE_DIRECTORY, $form_element['#parents'][0]);
+    $path = file_create_path(implode($dirs,'/'));
+    file_check_directory($path, FILE_CREATE_DIRECTORY, $form_element['#parents'][0]);
   }
   return true;
 }
@@ -367,6 +369,9 @@ function imagefield_widget($op, &$node, $field, &$node_field) {
   $fieldname = $field['field_name'];
   $content_type = $field['type_name'];
   switch ($op) {
+    case 'default value':
+           return array();
+
     case 'prepare form values':
       // clean up the session if we weren't posted.
       if (!count($_POST)) {
