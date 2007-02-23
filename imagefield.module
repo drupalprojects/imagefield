@@ -453,10 +453,8 @@ function _imagefield_widget_form($node, $field, &$node_field) {
   $fieldname = $field['field_name'];
   drupal_add_css(drupal_get_path('module', 'imagefield') .'/imagefield.css');
  
-  $form = array(
-    '#prefix' => '<div id="'. form_clean_id($fieldname .'-attach-wrapper') .'">',
-    '#suffix' => '</div>',
-  ); 
+  $form = array();
+
   $form[$fieldname] = array(
     '#type' => 'fieldset',
     '#title' => t($field['widget']['label']),
@@ -464,25 +462,8 @@ function _imagefield_widget_form($node, $field, &$node_field) {
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#tree' => TRUE,
-    '#prefix' => '<div id="'. form_clean_id($fieldname .'-attach-hide') .'">',
-    '#suffix' => '</div>',
-  );
-
-  // Some useful info for our js callback.
-  $form[$fieldname]['vid'] = array(
-    '#type' => 'hidden',
-    '#value' => $node->vid,
-    '#tree' => FALSE,
-  );
-  $form[$fieldname]['nid'] = array(
-    '#type' => 'hidden',
-    '#value' => $node->nid,
-    '#tree' => FALSE,
-  );
-  $form[$fieldname]['type'] = array(
-    '#type' => 'hidden',
-    '#value' => $node->type,
-    '#tree' => FALSE,
+    '#prefix' => '<div id="'. form_clean_id($fieldname .'-attach-wrapper') .'"><div id="'. form_clean_id($fieldname .'-attach-hide') .'">',
+    '#suffix' => '</div></div>',
   );
       
   // Seperate from tree becase of that silly things won't be 
@@ -593,6 +574,23 @@ function _imagefield_widget_form($node, $field, &$node_field) {
   // The class triggers the js upload behaviour.
   $form[$fieldname.'-attach-url'] = array('#type' => 'hidden', '#value' => url('imagefield/js', NULL, NULL, TRUE), '#attributes' => array('class' => 'upload'));
 
+  // Some useful info for our js callback.
+  $form['vid'] = array(
+    '#type' => 'hidden',
+    '#value' => $node->vid,
+    '#tree' => FALSE,
+  );
+  $form['nid'] = array(
+    '#type' => 'hidden',
+    '#value' => $node->nid,
+    '#tree' => FALSE,
+  );
+  $form['type'] = array(
+    '#type' => 'hidden',
+    '#value' => $node->type,
+    '#tree' => FALSE,
+  );
+   
   return $form;
 }
 
