@@ -313,7 +313,9 @@ function imagefield_form_check_directory($form_element) {
 function imagefield_check_directory($directory, $form_element = array()) {
   foreach(explode('/', $directory) as $dir) {
     $dirs[] = $dir;
-    file_check_directory(file_create_path(implode($dirs,'/')), FILE_CREATE_DIRECTORY, $form_element['#parents'][0]);
+    // Note: Pass by reference in file_check_directory.
+    $path = file_create_path(implode($dirs,'/'));
+    file_check_directory($path, FILE_CREATE_DIRECTORY, $form_element['#parents'][0]);
   }
   return true;
 }
@@ -345,7 +347,7 @@ function imagefield_clear_session() {
 
 function imagefield_clear_field_session($fieldname) {
   if (is_array($_SESSION['imagefield'][$fieldname]) && count($_SESSION['imagefield'][$fieldname])) {
-    foreach ($_SESSION['imagefield'][$fieldname] as $files) {
+    foreach ($_SESSION['imagefield'][$fieldname] as $file) {
       if (is_file($file['filepath'])) {
         file_delete($file['filepath']);
       }
