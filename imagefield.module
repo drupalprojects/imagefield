@@ -250,35 +250,6 @@ function imagefield_widget_settings($op, $widget) {
         '#default_value' =>  $widget['custom_title'] ? $widget['custom_title'] : 0,
         '#description' => t('Enable custom title text for images. Filename will be used if not checked.'),
       );
-
-      // if imagecache is installed and the display fields patch 
-      // isn't in cck, display the imagecache options.
-      if (module_exists('imagecache') && !function_exists('_content_field_view')) {
-        $options = array();
-        $options['default'] = 'Default';
-        $presets =  _imagecache_get_presets();
-        foreach($presets as $id => $name) {
-          $options[$name] = $name;
-        }
-        $form['imagecache'] = array(
-          '#type' => 'fieldset',
-          '#title' => 'Imagecache Options',
-        );
-        $form['imagecache']['teaser_preset'] = array(
-          '#title' => t('Teaser preset'),
-          '#description' => t('Select the imagecache preset you want to handle thumbnails in the teaser.'),
-          '#type' => 'select',
-          '#options' =>  $options,
-          '#default_value' => $widget['teaser_preset'] ? $widget['teaser_preset'] : 'default' ,
-        );
-        $form['imagecache']['body_preset'] = array(
-          '#title' => t('Body preset'),
-          '#description' => t('Select the imagecache preset you want to handle thumbnails in the body.'),
-          '#type' => 'select',
-          '#options' =>  $options,
-          '#default_value' => $widget['body_preset'] ? $widget['body_preset'] : 'default',
-        );
-      }
       return $form;
 
     case 'validate':
