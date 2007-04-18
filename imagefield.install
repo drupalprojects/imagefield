@@ -22,7 +22,7 @@ function imagefield_update_1() {
 
   
 
-    $fields = _content_fields();
+    $fields = content_fields();
 
     foreach ($fields as $field) {
       switch ($field['type']) {
