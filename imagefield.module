@@ -571,16 +571,11 @@ function imagefield_field_formatter($field, $item, $formatter) {
 
 function _imagefield_file_load($fid = NULL) {
   // Don't bother if we weren't passed and fid.
-  if (isset($fid)) { 
-    // Test to catch fid, eventuall plan to have node_load syntax
-    // once file_attributes table is complete
-    if (is_numeric($fid)) {
-      $result = db_query('SELECT * FROM {files} WHERE fid = %d', $fid);
-      $file = db_fetch_array($result);
-      return ($file) ? $file : array();
-    }
+  if (!empty($fid) && is_numeric($fid)) { 
+    $result = db_query('SELECT * FROM {files} WHERE fid = %d', $fid);
+    $file = db_fetch_array($result);
   }
-  return array();
+  return is_array($file) ? $file : array();
 }
 
 function theme_imagefield_view_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
