@@ -326,7 +326,7 @@ function imagefield_widget($op, &$node, $field, &$node_field) {
       return array();
 
     case 'prepare form values':
-      imagefield_widget_prepare_form_values($node, $field, $node_field);
+      _imagefield_widget_prepare_form_values($node, $field, $node_field);
       return;
 
     case 'form':
@@ -334,12 +334,12 @@ function imagefield_widget($op, &$node, $field, &$node_field) {
       return $form;
 
     case 'validate':
-      imagefield_widget_form_validate($node, $field, $node_field);
+      _imagefield_widget_form_validate($node, $field, $node_field);
       return;
   }
 }
 
-function imagefield_widget_prepare_form_values($node, $field, &$node_field) {
+function _imagefield_widget_prepare_form_values($node, $field, &$node_field) {
   $fieldname = $field['field_name'];
   // clean up the session if we weren't posted.
   if (!count($_POST)) {
@@ -503,7 +503,7 @@ function _imagefield_widget_form($node, $field, &$node_field) {
   return $form;
 }
 
-function imagefield_widget_form_validate($node, $field, $node_field) {
+function _imagefield_widget_form_validate($node, $field, $node_field) {
   $fieldname = $field['field_name'];
   if ($field['required']) {
     if (!count($node_field)) {
