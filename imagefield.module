@@ -345,18 +345,18 @@ function _imagefield_file_delete($file, $fieldname) {
 function imagefield_widget($op, &$node, $field, &$node_field) {
   switch ($op) {
     case 'default value':
-           return array();
+      return array();
 
     case 'prepare form values':
       _imagefield_widget_prepare_form_values($node, $field, $node_field);
-      break;
+      return;
 
     case 'form':
       return _imagefield_widget_form($node, $field, $node_field);
 
     case 'validate':
       _imagefield_widget_validate($node, $field, $node_field);
-      break;
+      return;
   }
 }  
 
