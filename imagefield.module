@@ -323,7 +323,7 @@ function _imagefield_file_delete($file, $fieldname) {
   return file_delete($file['filepath']);
 }
 
-function _imagefield_store_temp_file($file, $field, $node_field) {
+function _imagefield_store_temp_file($file, $field, &$node_field) {
   $fieldname = $field['field_name'];
   // Create the filepath for the image preview
   $filepath = file_create_filename($file['filename'], file_create_path($field['widget']['image_path']));
@@ -488,12 +488,6 @@ function _imagefield_widget_form($node, $field, &$node_field) {
           );
         }
         
-        $form[$fieldname][$delta]['filename'] = array('#type' => 'value',  '#value' => $file['filename']);
-        $form[$fieldname][$delta]['filepath'] = array('#type' => 'value',  '#value' => $file['filepath']);
-        $form[$fieldname][$delta]['filemime'] = array('#type' => 'value',  '#value' => $file['filemime']);
-        $form[$fieldname][$delta]['filesize'] = array('#type' => 'value',  '#value' => $file['filesize']);
-        $form[$fieldname][$delta]['fid'] = array('#type' => 'value',  '#value' => $file['fid']);
-      
         // Special handling for single value fields
         if (!$field['multiple']) {
           $form[$fieldname][$delta]['replace'] = array(
@@ -503,11 +497,19 @@ function _imagefield_widget_form($node, $field, &$node_field) {
         }
       }
       elseif ($file['filepath'] && $file['flags']['delete']) {
-        $form[$fieldname][$delta]['flags']['delete'] = array(
-          '#type' => 'hidden', // A value type will not persist here, must be hidden
-          '#value' => $file['flags']['delete'],
-        );
+        // Hide all the form values if this item is marked for deletion
+        // Delete flag must be type 'hidden' to persist in 4.7
+        $form[$fieldname][$delta]['flags']['delete'] = array('#type' => 'hidden', '#value' => $file['flags']['delete']);
+        $form[$fieldname][$delta]['title'] = array('#type' => 'value', '#value' => $file['title']);
+        $form[$fieldname][$delta]['alt'] = array('#type' => 'value', '#value' => $file['alt']);
       }
+
+      $form[$fieldname][$delta]['filename'] = array('#type' => 'value',  '#value' => $file['filename']);
+      $form[$fieldname][$delta]['filepath'] = array('#type' => 'value',  '#value' => $file['filepath']);
+      $form[$fieldname][$delta]['filemime'] = array('#type' => 'value',  '#value' => $file['filemime']);
+      $form[$fieldname][$delta]['filesize'] = array('#type' => 'value',  '#value' => $file['filesize']);
+      $form[$fieldname][$delta]['fid'] = array('#type' => 'value',  '#value' => $file['fid']);
+
     }
   }
   return $form;
