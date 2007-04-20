@@ -98,18 +98,9 @@ function imagefield_field_settings($op, $field) {
  */
 function imagefield_file_insert($node, &$file, $field) {
   $fieldname = $field['field_name'];
-  // Allow tokenized paths.
-  if (function_exists('token_replace')) {
-    global $user;
-    $widget_image_path = token_replace($field['widget']['image_path'],'user', $user);
-  }
-  else {
-    $widget_image_path = $field['widget']['image_path'];
-  }
- 
-  $filepath = file_create_path($widget_image_path) . '/' . $file['filename'];
+  $filepath = file_create_path($field['widget']['image_path']) . '/' . $file['filename'];
 
-  if (imagefield_check_directory($widget_image_path) && $file = file_save_upload((object)$file, $filepath)) {
+  if (imagefield_check_directory($field['widget']['image_path']) && $file = file_save_upload((object)$file, $filepath)) {
     $file = (array)$file;
     $file['fid'] = db_next_id('{files}_fid');
     db_query("INSERT into {files} (fid, nid, filename, filepath, filemime, filesize)
@@ -229,9 +220,7 @@ function imagefield_widget_settings($op, $widget) {
         '#description' => t('Optional subdirectory within the "%dir" directory where images will be stored. Do not include trailing slash.', array('%dir' => theme('placeholder', variable_get('file_directory_path', 'files')))), 
         '#after_build' => array('imagefield_form_check_directory'),
       );
-      if (function_exists('token_replace')) {
-        $form['image_path']['#description'] .= theme('token_help', 'user');
-      }
+
       $form['custom_alt'] = array(
         '#type' => 'checkbox',
         '#title' => t('Enable custom alternate text'),
@@ -337,15 +326,7 @@ function _imagefield_file_delete($file, $fieldname) {
 function _imagefield_store_temp_file($file, $field, $node_field) {
   $fieldname = $field['field_name'];
   // Create the filepath for the image preview
-  if (function_exists('token_replace')) {
-    // use tokenized paths if token module is installed.
-    global $user;
-    $filepath = file_create_filename($file['filename'], file_create_path(token_replace($field['widget']['image_path'], 'user', $user)));
-  }
-  else {
-    $filepath = file_create_filename($file['filename'], file_create_path($field['widget']['image_path']));
-  }
-
+  $filepath = file_create_filename($file['filename'], file_create_path($field['widget']['image_path']));
   if (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC) ==  FILE_DOWNLOADS_PRIVATE) {
     if (strpos($filepath, file_directory_path()) !== FALSE) {
       $filepath = trim(substr($filepath, strlen(file_directory_path())), '\\/');
@@ -463,13 +444,7 @@ function _imagefield_widget_form($node, $field, &$node_field) {
           '#default_value' => 0,
         );
         
-        if (function_exists('token_replace')) { 
-          global $user;
-          $filename = $file['fid'] == 'upload' ? file_create_filename($file['filename'], file_create_path(token_replace($field['widget']['image_path'], 'user', $user))) : $file['filepath'];
-        } else {
-          $filename = $file['fid'] == 'upload' ? file_create_filename($file['filename'], file_create_path($field['widget']['image_path'])) : $file['filepath'];
-        }
-
+        $filename = $file['fid'] == 'upload' ? file_create_filename($file['filename'], file_create_path($field['widget']['image_path'])) : $file['filepath'];
         
         $form[$fieldname][$delta]['preview'] = array(
           '#type' => 'markup',
