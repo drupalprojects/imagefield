@@ -542,7 +542,7 @@ function imagefield_field_formatter_info() {
  *
  */
 function imagefield_field_formatter($field, $item, $formatter) {
-  if (!isset($item['fid'])) {
+  if (empty($item['fid'])) {
     return '';
   }
   
