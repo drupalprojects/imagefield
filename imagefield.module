@@ -153,45 +153,45 @@ function imagefield_file_update($node, &$file, $field) {
 /**
  * Implementation of hook_field().
  */
-function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
+function imagefield_field($op, $node, $field, &$items, $teaser, $page) {
   $fieldname = $field['field_name'];
   switch ($op) {
     // called after content.module loads default data.
     case 'load':
       $output = array();
-      if (count($node_field)) {
+      if (count($items)) {
         $values = array();
-        foreach ($node_field as $delta => $file) {
-          $node_field[$delta]  = array_merge((array)$node_field[$delta], _imagefield_file_load($file['fid']));
+        foreach ($items as $delta => $file) {
+          $items[$delta]  = array_merge((array)$items[$delta], _imagefield_file_load($file['fid']));
         }
-        return array($fieldname => $node_field);
+        return array($fieldname => $items);
       };
       break; 
 
     // called before content.module defaults.
     case 'insert':
-      foreach ($node_field as  $delta => $item) {
-        $node_field[$delta] = imagefield_file_insert($node, $item, $field); 
+      foreach ($items as  $delta => $item) {
+        $items[$delta] = imagefield_file_insert($node, $item, $field); 
       }
       imagefield_clear_field_session($fieldname);
       break;
 
     // called before content.module defaults.
     case 'update':
-      foreach ($node_field as $delta => $item) {
-        $node_field[$delta] = imagefield_file_update($node, $item, $field); 
-        // Remove non-existant files from node_field
-        if (empty($node_field[$delta])) {
-          unset($node_field[$delta]);
+      foreach ($items as $delta => $item) {
+        $items[$delta] = imagefield_file_update($node, $item, $field); 
+        // Remove non-existant files from items
+        if (empty($items[$delta])) {
+          unset($items[$delta]);
         }
       }
       // Compact deltas.
-      $node_field = array_values($node_field);
+      $items = array_values($items);
       imagefield_clear_field_session($fieldname);
       break;
 
     case 'delete':
-      foreach ($node_field as $delta => $item) {
+      foreach ($items as $delta => $item) {
         _imagefield_file_delete($item, $field['field_name']); 
       }
       break;
@@ -353,26 +353,26 @@ function _imagefield_file_delete($file, $fieldname) {
 /**
  * Implementation of hook_widget().
  */
-function imagefield_widget($op, &$node, $field, &$node_field) {
+function imagefield_widget($op, &$node, $field, &$items) {
   switch ($op) {
     case 'default value':
       return array();
 
     case 'prepare form values':
-      _imagefield_widget_prepare_form_values($node, $field, $node_field);
+      _imagefield_widget_prepare_form_values($node, $field, $items);
       return;
 
     case 'form':
-      return _imagefield_widget_form($node, $field, $node_field);
+      return _imagefield_widget_form($node, $field, $items);
 
     case 'validate':
-      _imagefield_widget_validate($node, $field, $node_field);
+      _imagefield_widget_validate($node, $field, $items);
       return;
   }
 }  
 
 
-function _imagefield_widget_prepare_form_values(&$node, $field, &$node_field) {
+function _imagefield_widget_prepare_form_values(&$node, $field, &$items) {
   $fieldname = $field['field_name'];
   // clean up the session if we weren't posted.
   if (!count($_POST)) {
@@ -385,7 +385,7 @@ function _imagefield_widget_prepare_form_values(&$node, $field, &$node_field) {
 
     // Validation must happen immediately after the image is uploaded so we
     // can discard the file if it turns out not to be a valid mime type
-    $valid_image = _imagefield_widget_upload_validate($node, $field, $node_field, $file);
+    $valid_image = _imagefield_widget_upload_validate($node, $field, $items, $file);
     //$valid_image = TRUE;
 
     if ($valid_image) { 
@@ -413,15 +413,15 @@ function _imagefield_widget_prepare_form_values(&$node, $field, &$node_field) {
           
       // If a single field, mark any other images for deletion and delete files in session
       if (!$field['multiple']) {
-        if (is_array($node_field)) {
-          foreach ($node_field as $delta => $session_file) {
-            $node_field[$delta]['flags']['delete'] = TRUE;
+        if (is_array($items)) {
+          foreach ($items as $delta => $session_file) {
+            $items[$delta]['flags']['delete'] = TRUE;
           }
         }
         imagefield_clear_field_session($fieldname);
       }
       // Add the file to the session
-      $file_id = count($node_field) + count($_SESSION['imagefield'][$fieldname]);
+      $file_id = count($items) + count($_SESSION['imagefield'][$fieldname]);
       $_SESSION['imagefield'][$fieldname][$file_id] = $file;
     }
     else {
@@ -430,9 +430,9 @@ function _imagefield_widget_prepare_form_values(&$node, $field, &$node_field) {
 
       // If a single field and a valid file is in the session, mark existing image for deletion
       if (!$field['multiple']) {
-        if (count($_SESSION['imagefield'][$fieldname]) && count($node_field)) {
-          foreach ($node_field as $delta => $session_file) {
-            $node_field[$delta]['flags']['delete'] = TRUE;
+        if (count($_SESSION['imagefield'][$fieldname]) && count($items)) {
+          foreach ($items as $delta => $session_file) {
+            $items[$delta]['flags']['delete'] = TRUE;
           }
         }
       }
@@ -442,12 +442,12 @@ function _imagefield_widget_prepare_form_values(&$node, $field, &$node_field) {
   // Load files from preview state. before committing actions.
   if (is_array($_SESSION['imagefield'][$fieldname]) && count($_SESSION['imagefield'][$fieldname])) {
     foreach($_SESSION['imagefield'][$fieldname] as $delta => $file) {
-      $node_field[] = $file;
+      $items[] = $file;
     }
   }
 }  
 
-function _imagefield_widget_form($node, $field, &$node_field) {
+function _imagefield_widget_form($node, $field, &$items) {
   drupal_add_js('misc/progress.js');
   drupal_add_js('misc/upload.js');
 
@@ -495,8 +495,8 @@ function _imagefield_widget_form($node, $field, &$node_field) {
 
   // @todo split following if block into its own function.
   // Store the file data object to be carried on.
-  if (is_array($node_field) && count($node_field)) {
-    foreach($node_field as $delta => $file) {
+  if (is_array($items) && count($items)) {
+    foreach($items as $delta => $file) {
       if ($file['filepath'] && !$file['flags']['delete']) {
         $form[$fieldname][$delta] = array (
           '#theme' => 'imagefield_edit_image_row',
@@ -604,13 +604,13 @@ function _imagefield_widget_form($node, $field, &$node_field) {
   return $form;
 }
 
-function _imagefield_widget_validate($node, $field, $node_field) {
-  if ($field['required'] && !count($node_field)) {
+function _imagefield_widget_validate($node, $field, $items) {
+  if ($field['required'] && !count($items)) {
     form_set_error($field['field_name'], $field['widget']['label'] .' is required.');
   }
 }  
 
-function _imagefield_widget_upload_validate($node, $field, $node_field, $file) {
+function _imagefield_widget_upload_validate($node, $field, $items, $file) {
   // initialize our validation state, innocent until proven guilty.
   $valid = TRUE;
 
@@ -781,19 +781,19 @@ function imagefield_js() {
   
 
   // Load fid's stored by content.module
-  $node_field = array();
-  $values  = content_field('load', $node, $field, $node_field, FALSE, FALSE);
-  $node_field = $values[$fieldname];
+  $items = array();
+  $values  = content_field('load', $node, $field, $items, FALSE, FALSE);
+  $items = $values[$fieldname];
 
   // Load additional field data
-  imagefield_field('load', $node, $field, $node_field, FALSE, FALSE);
+  imagefield_field('load', $node, $field, $items, FALSE, FALSE);
 
   // Handle uploads and validation.
-  _imagefield_widget_prepare_form_values($node, $field, $node_field);
-  _imagefield_widget_validate($node, $field, $node_field);
+  _imagefield_widget_prepare_form_values($node, $field, $items);
+  _imagefield_widget_validate($node, $field, $items);
 
   // Get our new form baby, yeah tiger, get em!
-  $form = _imagefield_widget_form($node, $field, $node_field);
+  $form = _imagefield_widget_form($node, $field, $items);
 
   foreach (module_implements('form_alter') as $module) {
     $function = $module .'_form_alter';
