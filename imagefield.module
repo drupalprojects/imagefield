@@ -696,9 +696,8 @@ function theme_imagefield_edit_image_row($element) {
 }
 
 function theme_imagefield_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
-  
   $file = (array)$file;
-  if (!$getsize || (is_file($file['filepath']) && (list($width, $height, $type, $image_attributes) = @getimagesize($file['filepath'])))) {
+  if (is_file($file['filepath']) && (!$getsize || (list($width, $height, $type, $image_attributes) = @getimagesize($file['filepath'])))) {
     $attributes = drupal_attributes($attributes);
     
     $path = $file['fid'] == 'upload' ? $file['preview'] : $file['filepath'];
@@ -709,6 +708,8 @@ function theme_imagefield_image($file, $alt = '', $title = '', $attributes = NUL
     return '<img src="'. check_url($url) .'" alt="'.
         check_plain($alt) .'" title="'. check_plain($title) .'" '. $image_attributes . $attributes .' />';
   }
+  // we could display default image here...
+  return '';
 }
 
 /**
