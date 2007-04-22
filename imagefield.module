@@ -604,9 +604,27 @@ function _imagefield_widget_form($node, $field, &$items) {
   return $form;
 }
 
+/**
+ * Validate the widget.
+ */
 function _imagefield_widget_validate($node, $field, $items) {
-  if ($field['required'] && !count($items)) {
-    form_set_error($field['field_name'], $field['widget']['label'] .' is required.');
+  
+  if ($field['required']) {
+    // Sum all the items marked for deletion, so we can make sure the end user
+    // isn't deleting all of the images.
+    $deleted = 0;
+    foreach($items as $item) {
+      if ($item['flags']['delete']) {
+        $deleted++;
+      }
+    }
+
+    if (!count($items)) { 
+      form_set_error($field['field_name'], $field['widget']['label'] .' is required. Please upload an image.');
+    }
+    else if (count($items) == $deleted ) {
+      form_set_error($field['field_name'], $field['widget']['label'] .' is required. Please uncheck at least one delete checkbox or upload another image.');
+    }
   }
 }  
 
