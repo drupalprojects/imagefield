@@ -240,6 +240,15 @@ function imagefield_widget_settings($op, $widget) {
       if (function_exists('token_replace')) {
         $form['image_path']['#description'] .= theme('token_help', 'user');
       }
+      $form['file_extensions'] = array (
+        '#type' => 'textfield', 
+        '#title' => t('Permitted upload file extensions.'), 
+        '#default_value' => $widget['file_extensions'] ? $widget['file_extensions'] : 'jpg jpeg png gif',
+        '#size' => 64, 
+        '#maxlength' => 64, 
+        '#description' => t('Extensions a user can upload to this field. Seperate extensions with a space and do not include the leading dot.')
+      );  
+
       $form['custom_alt'] = array(
         '#type' => 'checkbox',
         '#title' => t('Enable custom alternate text'),
@@ -258,7 +267,7 @@ function imagefield_widget_settings($op, $widget) {
       break;
 
     case 'save':
-      return array('max_resolution', 'image_path', 'custom_alt', 'custom_title', 'teaser_preset', 'body_preset');
+      return array('max_resolution', 'image_path', 'file_extensions', 'custom_alt', 'custom_title');
   }
 }
 
@@ -373,7 +382,13 @@ function _imagefield_widget_prepare_form_values(&$node, $field, &$node_field) {
   // Attach new files 
   if ($file = file_check_upload($fieldname . '_upload')) {
     $file = (array)$file;
-    if (strpos($file['filemime'],'image') !== FALSE) { 
+
+    // Validation must happen immediately after the image is uploaded so we
+    // can discard the file if it turns out not to be a valid mime type
+    $valid_image = _imagefield_widget_upload_validate($node, $field, $node_field, $file);
+    //$valid_image = TRUE;
+
+    if ($valid_image) { 
       $file = _imagefield_scale_image($file, $field['widget']['max_resolution']);
 
       // Create the filepath for the image preview
@@ -408,6 +423,19 @@ function _imagefield_widget_prepare_form_values(&$node, $field, &$node_field) {
       // Add the file to the session
       $file_id = count($node_field) + count($_SESSION['imagefield'][$fieldname]);
       $_SESSION['imagefield'][$fieldname][$file_id] = $file;
+    }
+    else {
+      // Delete the invalid file
+      file_delete($file['filepath']);
+
+      // If a single field and a valid file is in the session, mark existing image for deletion
+      if (!$field['multiple']) {
+        if (count($_SESSION['imagefield'][$fieldname]) && count($node_field)) {
+          foreach ($node_field as $delta => $session_file) {
+            $node_field[$delta]['flags']['delete'] = TRUE;
+          }
+        }
+      }
     }
   }
       
@@ -492,7 +520,6 @@ function _imagefield_widget_form($node, $field, &$node_field) {
           '#value' => theme('imagefield_image', $file, $file['alt'], $file['title'], array('width' => '150'), FALSE),
         );
         
-        //drupal_set_message('imagefield['. $fieldname .'] '. $op .' node field: <pre>'. print_r($node_field, true) .'</pre>');
         $form[$fieldname][$delta]['description'] = array(
           '#type' => 'markup',
           '#value' => '<strong>' . t('Filename: ') . '</strong>' . $file['filename'],
@@ -554,7 +581,8 @@ function _imagefield_widget_form($node, $field, &$node_field) {
   }
 
   // The class triggers the js upload behaviour.
-  $form[$fieldname.'-attach-url'] = array('#type' => 'hidden', '#value' => url('imagefield/js', NULL, NULL, TRUE), '#attributes' => array('class' => 'upload'));
+  $form[$fieldname .'-attach-url'] = array('#type' => 'hidden', '#value' => url('imagefield/js', NULL, NULL, TRUE), '#attributes' => array('class' => 'upload'));
+
 
   // Some useful info for our js callback.
   $form['vid'] = array(
@@ -577,12 +605,38 @@ function _imagefield_widget_form($node, $field, &$node_field) {
 }
 
 function _imagefield_widget_validate($node, $field, $node_field) {
-  if ($field['required']) {
-    if (!count($node_field)) {
-      form_set_error($fieldname, $field['widget']['label'] .' is required.');
-    }
+  if ($field['required'] && !count($node_field)) {
+    form_set_error($field['field_name'], $field['widget']['label'] .' is required.');
   }
 }  
+
+function _imagefield_widget_upload_validate($node, $field, $node_field, $file) {
+  // initialize our validation state, innocent until proven guilty.
+  $valid = TRUE;
+
+  // do we even need to test file extensions?
+  if (!empty($field['widget']['file_extensions'])) {
+    // pop out the extensions and turn file_extensions into an array.
+    $ext = array_pop(explode('.', $file['filename']));
+    $allowed_extensions = array_unique(explode(' ', trim($field['widget']['file_extensions'])));
+    // is it the file extension in the allowed_extensions array?
+    if (!in_array($ext, $allowed_extensions)) {
+      // sorry no..
+      form_set_error($field['field_name'], t('Files with the extension %ext are not allowed. Please upload a file with an extension from the following list: %allowed_extensions', array('%ext' => $ext, '%allowed_extensions' => $field['widget']['file_extensions'])));
+      $valid = FALSE;
+    }
+  }
+
+  // is the mime type a match for image.
+  if (strpos($file['filemime'], 'image/') !== 0) {
+    // sorry no it isn't. do not pass go, do not collect $200.
+    form_set_error($field['field_name'], t('Mime Type mismatch. Only image files may be upload. You uploaded a file with mime type: %mime', array('%mime' => $file['filemime'])));
+    $valid = FALSE;
+  }
+  return $valid;
+}
+
+
 /**
  * Implementation of hook_field_formatter_info().
  */
@@ -722,7 +776,7 @@ function imagefield_js() {
     
   $node = (object)$_POST;
   // Load field data.
-  $field = content_fields($fieldname);
+  $field = content_fields($fieldname, $node->type);
   
 
   // Load fid's stored by content.module
