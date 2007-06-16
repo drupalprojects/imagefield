@@ -864,6 +864,14 @@ function imagefield_js() {
   // Handle uploads and validation.
   _imagefield_widget_prepare_form_values($node, $field, $items);
   _imagefield_widget_validate($node, $field, $items);
+  
+  if(is_array($node->{$fieldname}) && count($node->{$fieldname}) > 0) {
+    foreach($node->{$fieldname} as $key => $image) {
+      // Set the alt and title from POST
+      $items[$key]['alt'] = $image['alt'];
+      $items[$key]['title'] = $image['title'];
+    }
+  }
 
   // Get our new form baby, yeah tiger, get em!
   $form = _imagefield_widget_form($node, $field, $items);
