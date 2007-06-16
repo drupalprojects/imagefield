@@ -25,11 +25,22 @@ function imagefield_menu($maycache) {
     // Add handlers for previewing new uploads.
     foreach ($_SESSION['imagefield'] as $fieldname => $files) {
       if (is_array($files)) {
+        $download_method = variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC);
+
         foreach($files as $delta => $file) {
           if ($file['preview']) {
+            $filepath = $file['preview'];
+            if ($download_method == FILE_DOWNLOADS_PRIVATE) {
+              if (strpos($file['preview'], file_directory_path()) !== FALSE) {
+                $file['preview'] = trim(substr($file['preview'], strlen(file_directory_path())), '\\/');
+              }
+              $file['preview'] = 'system/files/' . $file['preview'];
+            }
+
             $items[] = array(
               'path' => $file['preview'],
               'callback' => '_imagefield_preview',
+              'callback arguments' => array($filepath),
               'access' => TRUE,
               'type' => MENU_CALLBACK,
             );
@@ -45,12 +56,12 @@ function imagefield_menu($maycache) {
  *  transfer a file that is in a 'preview' state.
  *  @todo  multiple support
  */
-function _imagefield_preview() {
+function _imagefield_preview($filepath) {
   foreach ($_SESSION['imagefield'] as $fieldname => $files) {
     foreach ($files as $delta => $file) {
-      if ($file['preview'] == $_GET['q']) {
+      if ($file['preview'] == $filepath) {
         file_transfer($file['filepath'], array('Content-Type: '. mime_header_encode($file['filemime']),
-                                           'Content-Length: '. $file['filesize']));
+                                               'Content-Length: '. $file['filesize']));
         exit();
       }
     }
@@ -486,13 +497,6 @@ function _imagefield_widget_prepare_form_values(&$node, $field, &$items) {
         $filepath = file_create_filename($file['filename'], file_create_path($field['widget']['image_path']));
       }
 
-      if (variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC) ==  FILE_DOWNLOADS_PRIVATE) {
-        if (strpos($filepath, file_directory_path()) !== FALSE) {
-          $filepath = trim(substr($filepath, strlen(file_directory_path())), '\\/');
-        }
-        $filepath = 'system/files/' . $filepath;
-      }
-          
       $file['fid'] = 'upload';
       $file['preview'] = $filepath;
           
