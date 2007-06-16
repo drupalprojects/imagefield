@@ -93,6 +93,14 @@ function imagefield_field_settings($op, $field) {
   }
 }
 
+function imagefield_default_item() {
+  return array(
+    'fid' => 0,
+    'title' => '',
+    'alt' => '',
+  );
+}
+
 /**
  * insert a file into the database.
  * @param $node
@@ -162,35 +170,60 @@ function imagefield_field($op, $node, $field, &$items, $teaser, $page) {
   switch ($op) {
     // called after content.module loads default data.
     case 'load':
-      $output = array();
       if (count($items)) {
-        $values = array();
         foreach ($items as $delta => $file) {
-          $items[$delta]  = array_merge((array)$items[$delta], _imagefield_file_load($file['fid']));
+          if (!empty($file)) {
+            $file = _imagefield_file_load($file['fid']);
+
+            // In certain cases, content.module calls this function with
+            // $items[$delta] set, even if the field has not yet been stored at
+            // all or has already been deleted. In that case, $file['fid'] == 0
+            // and file_load() returns an empty array. When that happens,
+            // unset() the delta so that subsequent hooks are not bothered.
+            if (empty($file)) {
+              unset($items[$delta]);
+            }
+            else { // otherwise, merge our info with CCK's, and all is fine.
+              $items[$delta] = array_merge((array)$items[$delta], $file);
+            }
+          }
         }
+        $items = array_values($items); // compact deltas
         return array($fieldname => $items);
-      };
-      break; 
+      }
+      return array();
 
     // called before content.module defaults.
     case 'insert':
-      foreach ($items as  $delta => $item) {
-        $items[$delta] = imagefield_file_insert($node, $item, $field); 
+      foreach ($items as $delta => $item) {
+        $items[$delta] = imagefield_file_insert($node, $item, $field);
+        // Remove non-existant images from items
+        if (empty($items[$delta])) {
+          unset($items[$delta]);
+        }
       }
+      $items = array_values($items); // compact deltas
       imagefield_clear_field_session($fieldname);
       break;
 
     // called before content.module defaults.
     case 'update':
       foreach ($items as $delta => $item) {
-        $items[$delta] = imagefield_file_update($node, $item, $field); 
-        // Remove non-existant files from items
+        $items[$delta] = imagefield_file_update($node, $item, $field);
+
+        // If the file has been deleted, unset the file entry so that it's
+        // actually deleted from the database, or at least set it to a
+        // default item if CCK won't delete it.
         if (empty($items[$delta])) {
-          unset($items[$delta]);
+          if ($field['multiple']) {
+            unset($items[$delta]);
+          }
+          else {
+            $items[$delta] = imagefield_default_item();
+          }
         }
       }
-      // Compact deltas.
-      $items = array_values($items);
+      $items = array_values($items); // compact deltas
       imagefield_clear_field_session($fieldname);
       break;
 
@@ -474,6 +507,7 @@ function _imagefield_widget_prepare_form_values(&$node, $field, &$items) {
       }
       // Add the file to the session
       $file_id = count($items) + count($_SESSION['imagefield'][$fieldname]);
+      $file['sessionid'] = $file_id;
       $_SESSION['imagefield'][$fieldname][$file_id] = $file;
     }
     else {
@@ -623,7 +657,9 @@ function _imagefield_widget_form($node, $field, &$items) {
         $form[$fieldname][$delta]['title'] = array('#type' => 'value', '#value' => $file['title']);
         $form[$fieldname][$delta]['alt'] = array('#type' => 'value', '#value' => $file['alt']);
       }
-
+      if (isset($file['sessionid'])) {
+        $form[$fieldname][$delta]['sessionid'] = array('#type' => 'value',  '#value' => $file['sessionid']);
+      }
       $form[$fieldname][$delta]['filename'] = array('#type' => 'value',  '#value' => $file['filename']);
       $form[$fieldname][$delta]['filepath'] = array('#type' => 'value',  '#value' => $file['filepath']);
       $form[$fieldname][$delta]['filemime'] = array('#type' => 'value',  '#value' => $file['filemime']);
@@ -743,8 +779,12 @@ function _imagefield_file_load($fid = NULL) {
   if (!empty($fid) && is_numeric($fid)) { 
     $result = db_query('SELECT * FROM {files} WHERE fid = %d', $fid);
     $file = db_fetch_array($result);
+    if ($file) {
+      return $file;
+    }
   }
-  return is_array($file) ? $file : array();
+  // return an empty array if nothing was found.
+  return array();
 }
 
 function theme_imagefield_view_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
