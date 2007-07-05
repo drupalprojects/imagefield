@@ -9,6 +9,14 @@
  *
  */
 
+function imagefield_default_item() {
+  return array(
+    'fid' => 0,
+    'title' => '',
+    'alt' => '',
+  );
+}
+
 
 function imagefield_menu($maycache) {
   $items = array();
@@ -139,19 +147,37 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
   switch ($op) {
     // called after content.module loads default data.
     case 'load':
-      $output = array();
       if (count($node_field)) {
         $values = array();
         foreach ($node_field as $delta => $file) {
-          $node_field[$delta]  = array_merge((array)$node_field[$delta], _imagefield_file_load($file['fid']));
-        }
+		  if (!empty($file)) {
+            $file = _imagefield_file_load($file['fid']);
+
+            // In certain cases, content.module calls this function with
+            // $items[$delta] set, even if the field has not yet been stored at
+            // all or has already been deleted. In that case, $file['fid'] == 0
+            // and file_load() returns an empty array. When that happens,
+            // unset() the delta so that subsequent hooks are not bothered.
+            if (empty($file)) {
+              unset($node_field[$delta]);
+            }
+            else { // otherwise, merge our info with CCK's, and all is fine.
+          	  $node_field[$delta]  = array_merge((array)$node_field[$delta], $file); 
+			}
+          }
+		}
         return array($fieldname => $node_field);
-      };
-      break;
+      }
+	  return array();
+	  
     // called before content.module defaults.
     case 'insert':
       foreach ($node_field as  $delta => $item) {
         $node_field[$delta] = imagefield_file_insert($node, $item, $field); 
+		// Remove non-existant images from items
+        if (empty($node_field[$delta])) {
+          unset($node_field[$delta]);
+		}
       }
       imagefield_clear_field_session($fieldname);
       break;
@@ -160,9 +186,17 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
     case 'update':
       foreach ($node_field as $delta => $item) {
         $node_field[$delta] = imagefield_file_update($node, $item, $field); 
-        // Remove non-existant files from node_field
+
+        // If the file has been deleted, unset the file entry so that it's
+        // actually deleted from the database, or at least set it to a
+        // default item if CCK won't delete it.
         if (empty($node_field[$delta])) {
-          unset($node_field[$delta]);
+         if ($field['multiple']) {
+            unset($node_field[$delta]);
+          }
+          else {
+            $node_field[$delta] = imagefield_default_item();
+          }
         }
       }
       // Compact deltas.
@@ -546,8 +580,12 @@ function _imagefield_file_load($fid = NULL) {
   if (!empty($fid) && is_numeric($fid)) { 
     $result = db_query('SELECT * FROM {files} WHERE fid = %d', $fid);
     $file = db_fetch_array($result);
+	    if ($file) {
+      return $file;
+    }
   }
-  return is_array($file) ? $file : array();
+  // return an empty array if nothing was found.
+  return array();
 }
 
 function theme_imagefield_view_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
