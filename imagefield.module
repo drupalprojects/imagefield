@@ -727,8 +727,8 @@ function _imagefield_widget_upload_validate($node, $field, $items, $file) {
   // do we even need to test file extensions?
   if (!empty($field['widget']['file_extensions'])) {
     // pop out the extensions and turn file_extensions into an array.
-    $ext = array_pop(explode('.', $file['filename']));
-    $allowed_extensions = array_unique(explode(' ', trim($field['widget']['file_extensions'])));
+    $ext = strtolower(array_pop(explode('.', $file['filename'])));
+    $allowed_extensions = array_unique(explode(' ', strtolower(trim($field['widget']['file_extensions']))));
     // is it the file extension in the allowed_extensions array?
     if (!in_array($ext, $allowed_extensions)) {
       // sorry no..
