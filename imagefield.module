@@ -185,6 +185,15 @@ function imagefield_field($op, $node, $field, &$node_field, $teaser, $page) {
     // called before content.module defaults.
     case 'update':
       foreach ($node_field as $delta => $item) {
+
+        // If we're dealing with a single value field, and we just received
+        // a new file item, we need to mark the existing (old) one for
+        // deletion.  Otherwise, it will become orphaned.
+        if (!$field['multiple'] && (count($node_field) > 1) && ($delta === 0)) {
+          $item['flags']['delete'] = TRUE;
+        }
+        
+        // Update each file item.
         $node_field[$delta] = imagefield_file_update($node, $item, $field); 
 
         // If the file has been deleted, unset the file entry so that it's
