@@ -86,11 +86,12 @@ function imagefield_field_info() {
  */
 function imagefield_field_settings($op, $field) {
   switch ($op) {
+    case 'callbacks':
+      return array('view' => CONTENT_CALLBACK_CUSTOM);
     case 'form':
       $form = array();
       return $form;
     case 'validate':
-
       break;
     case 'save':
       return array();
@@ -179,6 +180,27 @@ function imagefield_file_update($node, &$file, $field) {
 function imagefield_field($op, $node, $field, &$items, $teaser, $page) {
   $fieldname = $field['field_name'];
   switch ($op) {
+    case 'view':
+      $context = $teaser ? 'teaser' : 'full';
+      $formatter = isset($field['display_settings'][$context]['format']) ? $field['display_settings'][$context]['format'] : 'default';
+      if (!count($items) && $field['widget']['use_default_image']) {
+        // build a fake items array
+        $items = array(array(
+          'fid' => 0,
+          'title' => $field['widget']['default_image']['filename'],
+          'alt' => $field['widget']['default_image']['filename'],
+          'nid' => $node->nid,
+          'filename' => $field['widget']['default_image']['filename'],
+          'filepath' => $field['widget']['default_image']['filepath'],
+          'filemime' => $field['widget']['default_image']['filemime'],
+          'filesize' => $field['widget']['default_image']['filesize'], 
+        ));
+      }
+      foreach ($items as $delta => $item) {
+        $items[$delta]['view'] = content_format($field, $item, $formatter, $node);
+      }
+      return theme('field', $node, $field, $items, $teaser, $page);
+      
     // called after content.module loads default data.
     case 'load':
       if (count($items)) {
