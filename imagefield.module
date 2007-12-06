@@ -351,6 +351,10 @@ function imagefield_widget_settings($op, $widget) {
       return $form;
 
     case 'validate':
+      // strip slashes from the beginning and end of $widget['image_path']
+      $widget['image_path'] = trim($widget['image_path'], '\\/');
+      form_set_value(array('#parents' => array('image_path')),  $widget['image_path']);
+
       // We save the upload here because we can't know the correct
       // file path until we save the file.
       if ($file = file_check_upload('default_image_upload')) {
@@ -496,16 +500,17 @@ function _imagefield_widget_prepare_form_values(&$node, $field, &$items) {
     if ($valid_image) { 
       $file = _imagefield_scale_image($file, $field['widget']['max_resolution']);
 
-      // Create the filepath for the image preview
+      // Allow tokenized paths if available
       if (function_exists('token_replace')) {
-        // use tokenized paths if token module is installed.
         global $user;
-        $filepath = file_create_filename($file['filename'], file_create_path(token_replace($field['widget']['image_path'], 'user', $user)));
+        $widget_image_path = token_replace($field['widget']['image_path'],'user', $user);
       }
       else {
-        $filepath = file_create_filename($file['filename'], file_create_path($field['widget']['image_path']));
+        $widget_image_path = $field['widget']['image_path'];
       }
-
+      imagefield_check_directory($widget_image_path);
+      $filepath = file_create_filename($file['filename'], file_create_path($widget_image_path));
+      
       $file['fid'] = 'upload';
       $file['preview'] = $filepath;
           
