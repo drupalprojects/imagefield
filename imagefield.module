@@ -247,6 +247,7 @@ function imagefield_field($op, $node, $field, &$items, $teaser, $page) {
         // a new file item, we need to mark the existing (old) one for
         // deletion.  Otherwise, it will become orphaned.
         if (!$field['multiple'] && (count($items) > 1) && ($delta === 0)) {
+          $item['flags']['hidden'] = TRUE;
           $item['flags']['delete'] = TRUE;
         }
         
@@ -540,6 +541,7 @@ function _imagefield_widget_prepare_form_values(&$node, $field, &$items) {
       if (!$field['multiple']) {
         if (is_array($items)) {
           foreach ($items as $delta => $session_file) {
+            $items[$delta]['flags']['hidden'] = TRUE;
             $items[$delta]['flags']['delete'] = TRUE;
           }
         }
@@ -558,6 +560,7 @@ function _imagefield_widget_prepare_form_values(&$node, $field, &$items) {
       if (!$field['multiple']) {
         if (count($_SESSION['imagefield'][$fieldname]) && count($items)) {
           foreach ($items as $delta => $session_file) {
+            $items[$delta]['flags']['hidden'] = TRUE;
             $items[$delta]['flags']['delete'] = TRUE;
           }
         }
@@ -623,7 +626,7 @@ function _imagefield_widget_form($node, $field, &$items) {
   // Store the file data object to be carried on.
   if (is_array($items) && count($items)) {
     foreach($items as $delta => $file) {
-      if ($file['filepath'] && !$file['flags']['delete']) {
+      if ($file['filepath'] && !$file['flags']['hidden']) {
         $form[$fieldname][$delta] = array (
           '#theme' => 'imagefield_edit_image_row',
         );
@@ -631,7 +634,7 @@ function _imagefield_widget_form($node, $field, &$items) {
         $form[$fieldname][$delta]['flags']['delete'] = array(
           '#type' => 'checkbox',
           '#title' => t('Delete'),
-          '#default_value' => 0,
+          '#default_value' => isset($file['flags']['delete']) ? $file['flags']['delete'] : 0,
         );
        
         if (function_exists('token_replace')) { 
@@ -691,8 +694,9 @@ function _imagefield_widget_form($node, $field, &$items) {
           );
         }
       }
-      elseif ($file['filepath'] && $file['flags']['delete']) {
-        // Hide all the form values if this item is marked for deletion
+      elseif ($file['filepath'] && $file['flags']['hidden']) {
+        // Render all the form values of this item if it is hidden.
+        $form[$fieldname][$delta]['flags']['hidden'] = array('#type' => 'value', '#value' => $file['flags']['hidden']);
         $form[$fieldname][$delta]['flags']['delete'] = array('#type' => 'value', '#value' => $file['flags']['delete']);
         $form[$fieldname][$delta]['title'] = array('#type' => 'value', '#value' => $file['title']);
         $form[$fieldname][$delta]['alt'] = array('#type' => 'value', '#value' => $file['alt']);
@@ -950,6 +954,7 @@ function imagefield_js() {
       // Set the alt and title from POST
       $items[$key]['alt'] = $image['alt'];
       $items[$key]['title'] = $image['title'];
+      $items[$key]['flags']['delete'] = $image['flags']['delete'];
     }
   }
 
