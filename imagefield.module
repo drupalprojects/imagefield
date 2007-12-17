@@ -381,7 +381,15 @@ function imagefield_widget_settings($op, $widget) {
       // We save the upload here because we can't know the correct
       // file path until we save the file.
       if ($file = file_check_upload('default_image_upload')) {
-        $filepath = file_create_path($widget['image_path']);
+        if (function_exists('token_replace')) {
+          global $user;
+          $widget_image_path = token_replace($widget['image_path'],'user', $user);
+        }
+        else {
+          $widget_image_path = $widget['image_path'];
+        }
+ 
+        $filepath = file_create_path($widget_image_path);
         if ($file = file_save_upload('default_image_upload', $filepath)) {
           form_set_value(array('#parents' => array('default_image')), (array) $file);
         }
