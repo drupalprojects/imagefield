@@ -87,8 +87,7 @@ function imagefield_field_info() {
 function imagefield_field_settings($op, $field) {
   switch ($op) {
     case 'callbacks':
-      //return array('view' => CONTENT_CALLBACK_CUSTOM);
-
+      break;
     case 'form':
       $form = array();
       $form['default'] = array(
@@ -221,51 +220,18 @@ function imagefield_file_update($node, &$file, $field) {
 function imagefield_field($op, $node, $field, &$items, $teaser, $page) {
   $fieldname = $field['field_name'];
   switch ($op) {
-    case 'view':
-      $context = $teaser ? 'teaser' : 'full';
-      $formatter = isset($field['display_settings'][$context]['format']) ? $field['display_settings'][$context]['format'] : 'default';
-      if (empty($items) && $field['use_default_image']) {
-
-        // build a fake items array
-        $items = array(array(
-          'title' => $field['widget']['default_image']['filename'],
-          'alt' => $field['widget']['default_image']['filename'],
-          'nid' => $node->nid,
-          'filename' => $field['widget']['default_image']['filename'],
-          'filepath' => $field['widget']['default_image']['filepath'],
-          'filemime' => $field['widget']['default_image']['filemime'],
-          'filesize' => $field['widget']['default_image']['filesize'], 
-        ));
-      }
-      foreach ($items as $delta => $item) {
-        $items[$delta]['view'] = content_format($field, $item, $formatter, $node);
-      }
-      return theme('field', $node, $field, $items, $teaser, $page);
-      
     // called after content.module loads default data.
     case 'load':
-      if (count($items)) {
-        foreach ($items as $delta => $file) {
-          if (!empty($file)) {
-            $file = _imagefield_file_load($file['fid']);
-
-            // In certain cases, content.module calls this function with
-            // $items[$delta] set, even if the field has not yet been stored at
-            // all or has already been deleted. In that case, $file['fid'] == 0
-            // and file_load() returns an empty array. When that happens,
-            // unset() the delta so that subsequent hooks are not bothered.
-            if (empty($file)) {
-              unset($items[$delta]);
-            }
-            else { // otherwise, merge our info with CCK's, and all is fine.
-              $items[$delta] = array_merge((array)$items[$delta], $file);
-            }
-          }
+      foreach ($items as $delta => $item) {
+        if (empty($item)) {
+          unset($items[$delta]);
         }
-        $items = array_values($items); // compact deltas
-        return array($fieldname => $items);
+        elseif (!empty($item['fid'])) {
+          $items[$delta] += _imagefield_file_load($item['fid']);
+        }
       }
-      return array();
+      $items = array_values($items); // compact deltas
+      break;
 
     // called before content.module defaults.
     case 'insert':
@@ -301,9 +267,6 @@ function imagefield_field($op, $node, $field, &$items, $teaser, $page) {
         if (empty($items[$delta])) {
           if ($field['multiple']) {
             unset($items[$delta]);
-          }
-          else {
-            $items[$delta] = imagefield_default_item();
           }
         }
       }
@@ -807,13 +770,12 @@ function imagefield_field_formatter_info() {
  *
  */
 function imagefield_field_formatter($field, $item, $formatter) {
-  drupal_set_message('imagefield_field_formatter: <pre>'. print_r($item, 1) .'</pre>');
-  if (!empty($item['fid'])) {
-    $file = _imagefield_file_load($item['fid']);
+  if (empty($item['fid']) && $field['use_default_image']) {
+    $file = $field['default_image'];
   }
   // If there is no image on the database, use default.
-  elseif ($field['use_default_image'] && is_array($field['default_image'])) {
-    $file = $field['default_image'];
+  if (empty($item['filepath'])) {
+    $file = _imagefield_file_load($item['fid']);
   }
   if (!empty($file['filepath'])) {
     return theme('imagefield_image', $file, $item['alt'], $item['title']);
