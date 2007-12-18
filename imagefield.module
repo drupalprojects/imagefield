@@ -160,8 +160,6 @@ function imagefield_field_settings($op, $field) {
  */
 function imagefield_views_handler_filter_is_not_null($op, $filter, $filterinfo, &$query) {
   if ($op == 'handler') {
-    $args = func_get_args();
-    //drupal_set_message('<pre>'. print_r($args, 1) .'</pre>');
     $query->ensure_table($filterinfo['table']);
     if ($filter['value']) {
       $qs = '%s.%s > 0';
