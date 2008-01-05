@@ -208,6 +208,7 @@ function imagefield_file_insert($node, &$file, $field) {
     db_query("INSERT into {files} (fid, nid, filename, filepath, filemime, filesize)
              VALUES (%d, %d, '%s','%s','%s',%d)",
             $file['fid'], $node->nid, $file['filename'], $file['filepath'], $file['filemime'], $file['filesize']);
+    module_invoke_all('imagefield_file', 'save', $file);
     return (array)$file;
   }
   else {
@@ -475,6 +476,7 @@ function _imagefield_file_delete($file, $fieldname) {
   else {
     unset($_SESSION['imagefield'][$fieldname][$file['sessionid']]);
   }
+  module_invoke_all('imagefield_file', 'delete', $file);
   return file_delete($file['filepath']);
 }
 
