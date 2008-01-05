@@ -642,7 +642,7 @@ function _imagefield_widget_form($node, $field, &$items) {
           $filename = $file['fid'] == 'upload' ? file_create_filename($file['filename'], file_create_path($field['widget']['image_path'])) : $file['filepath'];
         }
         
-        $form[$fieldname][$delta]['preview'] = array(
+        $form[$fieldname][$delta]['admin_preview'] = array(
           '#type' => 'markup',
           '#value' => theme('imagefield_image', $file, $file['alt'], $file['title'], array('width' => '150'), FALSE),
         );
@@ -704,6 +704,7 @@ function _imagefield_widget_form($node, $field, &$items) {
       }
       $form[$fieldname][$delta]['filename'] = array('#type' => 'value',  '#value' => $file['filename']);
       $form[$fieldname][$delta]['filepath'] = array('#type' => 'value',  '#value' => $file['filepath']);
+      $form[$fieldname][$delta]['preview'] = array('#type' => 'value',  '#value' => $file['preview']);
       $form[$fieldname][$delta]['filemime'] = array('#type' => 'value',  '#value' => $file['filemime']);
       $form[$fieldname][$delta]['filesize'] = array('#type' => 'value',  '#value' => $file['filesize']);
       $form[$fieldname][$delta]['fid'] = array('#type' => 'value',  '#value' => $file['fid']);
@@ -804,14 +805,14 @@ function imagefield_field_formatter_info() {
  */
 function imagefield_field_formatter($field, $item, $formatter) {
   if (empty($item['fid']) && $field['use_default_image']) {
-    $file = $field['default_image'];
+    $item = $field['default_image'];
   }
   // If there is no image on the database, use default.
   if (empty($item['filepath'])) {
-    $file = _imagefield_file_load($item['fid']);
+    $item = array_merge($item, _imagefield_file_load($item['fid']));
   }
-  if (!empty($file['filepath'])) {
-    return theme('imagefield_image', $file, $item['alt'], $item['title']);
+  if (!empty($item['filepath'])) {
+    return theme('imagefield_image', $item, $item['alt'], $item['title']);
   }
 }
 
@@ -836,7 +837,7 @@ function theme_imagefield_view_image($file, $alt = '', $title = '', $attributes 
 
 
 function theme_imagefield_edit_image_row($element) {
-  $output = '<div class="imagefield-edit-preview">'. drupal_render($element['preview']) .'</div>';
+  $output = '<div class="imagefield-edit-preview">'. drupal_render($element['admin_preview']) .'</div>';
   $output .= '<div class="imagefield-edit-image-detail">';
   $output .= '<div class="imagefield-edit-image-flags">'. drupal_render($element['flags']) .'</div>';
   $output .= '<div class="imagefield-edit-image-description">'. drupal_render($element['description']);
@@ -854,13 +855,14 @@ function theme_imagefield_edit_image_row($element) {
 
 function theme_imagefield_image($file, $alt = '', $title = '', $attributes = NULL, $getsize = TRUE) {
   $file = (array)$file;
-  if (is_file($file['filepath']) && (!$getsize || (list($width, $height, $type, $image_attributes) = @getimagesize($file['filepath'])))) {
+  if (!is_file($file['filepath'])) {    
+    return;
+  }
+  if (!$getsize || (list($width, $height, $type, $image_attributes) = @getimagesize($file['filepath']))) {
     $attributes = drupal_attributes($attributes);
-    
-    $path = $file['fid'] == 'upload' ? $file['preview'] : $file['filepath'];
+    $path = ($file['fid'] == 'upload') ? $file['preview'] : $file['filepath'];
     $alt = empty($alt) ? $file['alt'] : $alt;
     $title = empty($title) ? $file['title'] : $title;
-    
     $url = file_create_url($path);
     return '<img src="'. check_url($url) .'" alt="'.
         check_plain($alt) .'" title="'. check_plain($title) .'" '. $image_attributes . $attributes .' />';
