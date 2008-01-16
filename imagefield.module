@@ -60,9 +60,22 @@ function _imagefield_preview($filepath) {
   foreach ($_SESSION['imagefield'] as $fieldname => $files) {
     foreach ($files as $delta => $file) {
       if ($file['preview'] == $filepath) {
-        file_transfer($file['filepath'], array('Content-Type: '. mime_header_encode($file['filemime']),
-                                               'Content-Length: '. $file['filesize']));
-        exit();
+        // Emulate a normal file transfer by setting cache flags that will
+        // prevent the image from needing to be resent on previews. Without
+        // setting the cache headers, transfered images still get the expire
+        // headers set in drupal_page_header().
+        $modified_time = filemtime($file['filepath']);
+        $last_modified = gmdate('D, d M Y H:i:s', $modified_time) .' GMT';
+        $etag = '"'.md5($last_modified).'"';
+
+        file_transfer($file['filepath'], array(
+          'Content-Type: '. mime_header_encode($file['filemime']),
+          'Content-Length: '. $file['filesize'],
+          'Cache-Control: max-age=1209600',
+          'Expires: '. gmdate('D, d M Y H:i:s', time() + 1209600) .' GMT', // Two weeks.
+          'Last-Modified: '. $last_modified,
+          'ETag: '. $etag,
+        ));
       }
     }
   }
