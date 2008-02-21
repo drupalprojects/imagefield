@@ -865,7 +865,7 @@ function imagefield_field_formatter_info() {
  * Implementation of hook_field_formatter().
  *
  */
-function imagefield_field_formatter($field, $item, $formatter) {
+function imagefield_field_formatter($field, $item, $formatter, $node = NULL) {
   if (empty($item['fid']) && $field['use_default_image']) {
     $item = $field['default_image'];
   }
