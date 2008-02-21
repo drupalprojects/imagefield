@@ -106,8 +106,6 @@ function imagefield_field_settings($op, $field) {
       $form['default'] = array(
         '#type' => 'fieldset',
         '#title' => t('Default image'),
-        '#collapsible' => TRUE,
-        '#collapsed' => !$field['use_default_image'],
       );
       // Present a thumbnail of the current default image.
       $form['default']['use_default_image'] = array(
