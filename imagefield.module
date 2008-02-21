@@ -100,7 +100,8 @@ function imagefield_field_info() {
 function imagefield_field_settings($op, $field) {
   switch ($op) {
     case 'callbacks':
-      break;
+      return array('view' => CONTENT_CALLBACK_CUSTOM);
+
     case 'form':
       $form = array();
       $form['default'] = array(
@@ -322,6 +323,16 @@ function imagefield_field($op, $node, $field, &$items, $teaser, $page) {
         _imagefield_file_delete($item, $field['field_name']); 
       }
       break;
+
+    case 'view':
+      $formatter = isset($field['display_settings'][$context]['format']) ? $field['display_settings'][$context]['format'] : 'default';
+      if ($field['use_default_image'] && empty($items) ) {
+        $items[0] = $field['default_image'];
+      }
+      foreach ($items as $delta => $item) {
+        $items[$delta]['view'] = content_format($field, $item, $formatter, $node);
+      }
+      return theme('field', $node, $field, $items, $teaser, $page);
   }
 }
 
@@ -344,7 +355,7 @@ function imagefield_widget_info() {
 function imagefield_widget_settings($op, $widget) {
   switch ($op) {
     case 'callbacks':
-      //return array('default value' => CONTENT_CALLBACK_CUSTOM);
+      return array('default value' => CONTENT_CALLBACK_CUSTOM);
 
     case 'form':
       $form = array();
