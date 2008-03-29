@@ -388,7 +388,6 @@ function imagefield_widget_settings($op, $widget) {
         '#title' => t('Image path'), 
         '#default_value' => $widget['image_path'] ? $widget['image_path'] : '', 
         '#description' => t('Optional subdirectory within the "%dir" directory where images will be stored. Do not include trailing slash.', array('%dir' => variable_get('file_directory_path', 'files'))), 
-        '#after_build' => array('imagefield_form_check_directory'),
       );
       if (function_exists('token_replace')) {
         $form['image_path']['#description'] .= ' '. t('You can use the following tokens in the image path.');
@@ -436,21 +435,6 @@ function imagefield_form_alter($form_id, &$form) {
   if ($form_id == '_content_admin_field') {
     $form['#attributes'] = array('enctype' => 'multipart/form-data');
   }
-}
-
-/**
- * Wrapper function for imagefield_check_directory that accepts a form element
- * to validate - if user specified one. Won't allow form submit unless the
- * directory exists & is writable
- * 
- * @param $form_element
- *   The form element containing the name of the directory to check.
- */
-function imagefield_form_check_directory($form_element) {
-  if(!empty($form_element['#value'])) {
-    imagefield_check_directory($form_element['#value'], $form_element);
-  }
-  return $form_element;
 }
 
 /**
