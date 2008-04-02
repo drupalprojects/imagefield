@@ -377,7 +377,7 @@ function imagefield_widget_settings($op, $widget) {
         '#size' => 15, 
         '#maxlength' => 10, 
         '#description' => 
-        t('The maximum allowed image size expressed as WIDTHxHEIGHT (e.g. 640x480). Set to 0 for no restriction.')
+        t('The maximum allowed image size expressed as WIDTHxHEIGHT (e.g. 640x480). Set to 0 for no restriction. If a larger image is uploaded, it will be resized to reflect the given width and height.'),
       );
       $form['max_filesize'] = array (
         '#type' => 'textfield', 
