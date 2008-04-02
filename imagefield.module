@@ -22,30 +22,40 @@ function imagefield_menu($maycache) {
     );
   }
   elseif ($_SESSION['imagefield']) {
-    // Add handlers for previewing new uploads.
+    // do this variable_get once.... 
+    $download_method = variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC);
+
+    // Iterate over each field stored in session imagefield looking 
+    // for files in a preview state to add menu items for. This
+    // allows us to preview new uploads before a node is submitted.
     foreach ($_SESSION['imagefield'] as $fieldname => $files) {
-      if (is_array($files)) {
-        $download_method = variable_get('file_downloads', FILE_DOWNLOADS_PUBLIC);
+      // move on to the next field if there is nothing to process in files.
+      if (empty($files)) continue;
 
-        foreach($files as $delta => $file) {
-          if ($file['preview']) {
-            $filepath = $file['preview'];
-            if ($download_method == FILE_DOWNLOADS_PRIVATE) {
-              if (strpos($file['preview'], file_directory_path()) !== FALSE) {
-                $file['preview'] = trim(substr($file['preview'], strlen(file_directory_path())), '\\/');
-              }
-              $file['preview'] = 'system/files/' . $file['preview'];
-            }
-
-            $items[] = array(
-              'path' => $file['preview'],
-              'callback' => '_imagefield_preview',
-              'callback arguments' => array($filepath),
-              'access' => TRUE,
-              'type' => MENU_CALLBACK,
-            );
+      foreach($files as $delta => $file) {
+        // If the file is not a preview do not display it.
+        if (empty($file['preview']))  continue;
+    
+        // filepath to pass into _imagefield_preview
+        $filepath = $file['preview'];
+        
+        // build url path for private files menu item.
+        if ($download_method == FILE_DOWNLOADS_PRIVATE) {
+          // strip out the file_directory_path. It shouldn't be a part
+          // of the URL with private downloads.
+          if (strpos($file['preview'], file_directory_path()) !== FALSE) {
+            $file['preview'] = trim(substr($file['preview'], strlen(file_directory_path())), '\\/');
           }
+          $file['preview'] = 'system/files/' . $file['preview'];
         }
+
+        $items[] = array(
+          'path' => $file['preview'],
+          'callback' => '_imagefield_preview',
+          'callback arguments' => array($filepath),
+          'access' => TRUE,
+          'type' => MENU_CALLBACK,
+        );
       }
     }
   }
