@@ -279,7 +279,9 @@ function imagefield_file_insert($node, &$file, $field) {
 function imagefield_file_update($node, &$file, $field) {
   $file = (array)$file;
   if ($file['flags']['delete'] == TRUE) {
-    if (_imagefield_file_delete($file, $field['field_name'])) {
+    // don't delete files if we're creating new revisions, but still return an empty
+    // array...
+    if ($node->old_vid || _imagefield_file_delete($file, $field['field_name'])) {
       return array();
     }
   }
@@ -357,6 +359,19 @@ function imagefield_field($op, $node, $field, &$items, $teaser, $page) {
       imagefield_clear_field_session($fieldname);
       break;
 
+    case 'delete revision':
+      $db_info = content_database_info($field);
+      drupal_set_message('<prE>'. print_r($db_info,1) .'</pre>');
+      foreach ($items as $delta => $item) {
+        $references = db_result(db_query("SELECT count(vid) FROM {%s} WHERE nid=%d AND %s=%d and vid!=%d", $db_info['table'], $node->nid, $db_info['columns']['fid']['column'], $item['fid'], $node->vid));
+        if ($references || _imagefield_file_delete($item, $field['field_name'])) {
+          $items[$delta] = array();
+        }
+      }
+      $items = array_values($items); // compact deltas
+      break;
+
+    
     case 'delete':
       foreach ($items as $delta => $item) {
         _imagefield_file_delete($item, $field['field_name']);
