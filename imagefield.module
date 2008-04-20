@@ -153,13 +153,33 @@ function imagefield_field_settings($op, $field) {
     case 'validate':
       // We save the upload here because we can't know the correct
       // file path until we save the file.
-      if ($file = file_check_upload('default_image_upload')) {
-        if ($file = file_save_upload('default_image_upload', file_directory_path())) {
-          form_set_value(array('#parents' => array('default_image')), (array) $file);
-        }
+      // Check of we got an new upload.
+      if (!$file = file_check_upload('default_image_upload')) {
+        break;
       }
-
+      // figure steal the file extension and construct a filename for this  
+      // fields default image. This is standardized for default image handling 
+      // with private files.
+      $ext = array_pop(explode('.', $file->filename));
+      $filename = $field['field_name'] .'.'. $ext;
+      // verify the destination exists and is writeable...
+      $dst = file_create_path('imagefield_default_images/'. $filename);
+      if (!file_check_directory(dirname($dst), FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
+        form_set_error('default_image', t("The default image could not be uploaded. The destination(%d) does not exist or is not writable by the webserver.", array('%d' => $dst)));
+        break;
+      }  
+      // save the upload to it's resting place.
+      if (!$file = file_save_upload('default_image_upload', $dst)) {
+        form_set_error('default_image', t("The default image could not be uploaded. Failed saving to destination(%d).", array('%d' => $dst)));
+        break;
+      }
+      // remove the old one...
+      unlink($field['default_image']['filepath']);
+      // set the value of the form_item so we can store this in the settings 
+      // from validate.
+      form_set_value(array('#parents' => array('default_image')), (array) $file);
       break;
+
     case 'save':
       return array('default_image', 'use_default_image');
 
@@ -948,12 +968,20 @@ function theme_imagefield_multiple($images) {
 
 if (!function_exists('upload_file_download')) {
   function imagefield_file_download($file) {
-    $file = file_create_path($file);
+    // if this isn't a default image look it up from the db...
+    if (strpos($file, 'imagefield_default_images') !== FALSE) {
+      $fieldname = array_shift(explode('.',basename($file)));
+      $field = content_fields($fieldname);
+      $file = $field['default_image'];
+    }
+    else {
+      $file = file_create_path($file);
 
-    $result = db_query("SELECT f.* FROM {files} f WHERE filepath = '%s'", $file);
-    if (!$file = db_fetch_object($result)) {
-      // We don't really care about this file.
-      return;
+      $result = db_query("SELECT f.* FROM {files} f WHERE filepath = '%s'", $file);
+      if (!$file = db_fetch_object($result)) {
+        // We don't really care about this file.
+        return;
+      }
     }
 
     // @todo: check the node for this file to be referenced in a field
@@ -964,11 +992,16 @@ if (!function_exists('upload_file_download')) {
       return -1;
     }
 
-    $node = node_load($file->nid);
-    if (!node_access('view', $node)) {
-      // You don't have permission to view the node
-      // this file is attached to.
-      return -1;
+    // @hack: default images dont' have nids....
+    // I'm not going to bother checking perms for default images...
+    // it's a bug, but we'll resolve it later.
+    if (!empty($file->nid)) {
+      $node = node_load($file->nid);
+      if (!node_access('view', $node)) {
+        // You don't have permission to view the node
+        // this file is attached to.
+        return -1;
+      }
     }
 
     // Well I guess you can see this file.
