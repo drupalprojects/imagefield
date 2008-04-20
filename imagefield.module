@@ -289,6 +289,10 @@ function imagefield_file_update($node, &$file, $field) {
     return imagefield_file_insert($node, $file, $field);
   }
   else {
+    // empty files without fid.
+    if ($file['fid'] == 0) {
+      $file = array();
+    }
     // if fid is not numeric here we should complain.
     // else we update the file table.
   }
@@ -314,20 +318,21 @@ function imagefield_field($op, $node, $field, &$items, $teaser, $page) {
           $items[$delta] = array_merge($item, _imagefield_file_load($item['fid']));
         }
       }
-      $items = array_values($items); // compact deltas
+      $items = array_values(array_filter($items)); // compact deltas
       return array($fieldname => $items);
       break;
 
     // called before content.module defaults.
     case 'insert':
       foreach ($items as $delta => $item) {
-        $items[$delta] = imagefield_file_insert($node, $item, $field);
-        // Remove non-existant images from items
-        if (empty($items[$delta])) {
+        if ($item['flags']['delete']) {
           unset($items[$delta]);
         }
+        else {
+          $items[$delta] = imagefield_file_insert($node, $item, $field);
+        }
       }
-      $items = array_values($items); // compact deltas
+      $items = array_values(array_filter($items)); // compact deltas
       imagefield_clear_field_session($fieldname);
       break;
 
@@ -355,13 +360,12 @@ function imagefield_field($op, $node, $field, &$items, $teaser, $page) {
           }
         }
       }
-      $items = array_values($items); // compact deltas
+      $items = array_values(array_filter($items)); // compact deltas
       imagefield_clear_field_session($fieldname);
       break;
 
     case 'delete revision':
       $db_info = content_database_info($field);
-      drupal_set_message('<prE>'. print_r($db_info,1) .'</pre>');
       foreach ($items as $delta => $item) {
         $references = db_result(db_query("SELECT count(vid) FROM {%s} WHERE nid=%d AND %s=%d and vid!=%d", $db_info['table'], $node->nid, $db_info['columns']['fid']['column'], $item['fid'], $node->vid));
         if ($references || _imagefield_file_delete($item, $field['field_name'])) {
