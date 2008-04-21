@@ -1006,7 +1006,7 @@ if (!function_exists('upload_file_download')) {
   function imagefield_file_download($file) {
     // if this isn't a default image look it up from the db...
     if (strpos($file, 'imagefield_default_images') !== FALSE) {
-      $fieldname = array_shift(explode('.',basename($file)));
+      $fieldname = array_shift(explode('.', basename($file)));
       $field = content_fields($fieldname);
       $file = $field['default_image'];
     }
