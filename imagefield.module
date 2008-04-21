@@ -211,11 +211,12 @@ function imagefield_views_handler_filter_is_not_null($op, $filter, $filterinfo, 
     $query->ensure_table($filterinfo['table']);
     if ($filter['value']) {
       $qs = '%s.%s > 0';
+      $query->add_where($qs, $filterinfo['table'], $filterinfo['field']);
     }
     else {
       $qs = '%s.%s = 0 OR %s.%s IS NULL';
+      $query->add_where($qs, $filterinfo['table'], $filterinfo['field'], $filterinfo['table'], $filterinfo['field']);
     }
-    $query->add_where($qs, $filterinfo['table'], $filterinfo['field'], $filterinfo['table'], $filterinfo['field']);
   }
 
 }
@@ -654,9 +655,10 @@ function _imagefield_widget_prepare_form_values(&$node, $field, &$items) {
 function _imagefield_widget_form($node, $field, &$items) {
   drupal_add_js('misc/progress.js');
   drupal_add_js('misc/upload.js');
+  drupal_add_js(drupal_get_path('module', 'imagefield') .'/imagefield.js');
+  drupal_add_css(drupal_get_path('module', 'imagefield') .'/imagefield.css');
 
   $fieldname = $field['field_name'];
-  drupal_add_css(drupal_get_path('module', 'imagefield') .'/imagefield.css');
 
   $form = array();
 
@@ -664,6 +666,7 @@ function _imagefield_widget_form($node, $field, &$items) {
     '#type' => 'fieldset',
     '#title' => t($field['widget']['label']),
     '#weight' => $field['widget']['weight'],
+    '#description' => t('Changes made to the attachments are not permanent until you save this post.'),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
     '#tree' => TRUE,
@@ -685,13 +688,27 @@ function _imagefield_widget_form($node, $field, &$items) {
     $form[$fieldname]['new']['#value'] = format_plural($max_images, 'You can only attach one image to this field. Delete the image if you wish to be able to upload a different one.', 'You can only attach @count images to this field. Delete an image if you wish to be able to upload different images.');
   }
   else {
+
+    // multiupload: add an add new field button.
+    // onchange ajax upload each file input after validation.
+    // update date 'file_inputs' with qty of file inputs.
+    // name file inputs $fieldname .'_upload_'. number of file input.
+    // inprepare form_values hook iterate over each input.
+    // can we display files sizes to predict the total size of an upload.
+
+    $extensions_description = empty($field['widget']['file_extensions'])
+    ? ''
+    : t('<br />Allowed extensions: %ext', array('%ext' => $field['widget']['file_extensions']));
+
     // Seperate from tree becase of that silly things won't be
     // displayed if they are a child of '#type' = form issue
     $form[$fieldname]['new'][$fieldname .'_upload'] = array(
       '#type'  => 'file',
-      '#description' => $field['widget']['description'],
+      '#title' => t('Upload a new image'),
+      '#description' => $field['widget']['description'] . $extensions_description,
       '#tree' => FALSE,
       '#weight' => 9,
+      '#attributes' => array('class' => 'imagefield imagefield-'. $fieldname, 'accept' => str_replace(' ', '|', trim($field['widget']['file_extensions']))),
     );
 
     $form[$fieldname]['new']['upload'] = array(
