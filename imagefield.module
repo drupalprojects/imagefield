@@ -164,8 +164,8 @@ function imagefield_field_settings($op, $field) {
       $filename = $field['field_name'] .'.'. $ext;
       // verify the destination exists and is writeable...
       $dst = file_create_path('imagefield_default_images/'. $filename);
-      if (!file_check_directory(dirname($dst), FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
-        form_set_error('default_image', t("The default image could not be uploaded. The destination(%d) does not exist or is not writable by the webserver.", array('%d' => $dst)));
+      if (!imagefield_check_directory(dirname($dst))) {
+        form_set_error('default_image', t("The default image could not be uploaded. The destination(%d) does not exist or is not writable by the webserver.", array('%d' => dirname($dst))));
         break;
       }  
       // save the upload to it's resting place.
@@ -508,7 +508,10 @@ function imagefield_check_directory($directory, $form_element = array()) {
   foreach (explode('/', $directory) as $dir) {
     $dirs[] = $dir;
     $path = file_create_path(implode($dirs, '/'));
-    file_check_directory($path, FILE_CREATE_DIRECTORY, $form_element['#parents'][0]);
+    if (!file_check_directory($path, FILE_CREATE_DIRECTORY, $form_element['#parents'][0])) {
+      watchdog('imagefield', t('Imagefield failed to create directory(%d) at (%p).', array('%d' => $directory, '%p' => $path)), WATCHDOG_ERROR);
+      return false;
+    }
   }
   return true;
 }
