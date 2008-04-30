@@ -995,7 +995,6 @@ function theme_imagefield_formatter_url($url, $attributes = array()) {
 }
 
 function theme_imagefield_formatter_path($path, $attributes = array()) {
-  drupal_set_message(" theme_imagefield_formatter_path($path, ". print_r($attributes,1) .")");
   $attributes['class'] .= ' imagefield-formatter-url';
   return '<span '. drupal_attributes($attributes) .'>'. $path .'</span>';
 }
