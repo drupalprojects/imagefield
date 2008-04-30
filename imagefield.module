@@ -906,6 +906,7 @@ function _imagefield_widget_upload_validate($node, $field, $items, $file) {
 
 /**
  * Implementation of hook_field_formatter_info().
+
  */
 function imagefield_field_formatter_info() {
   $formatters = array(
@@ -913,6 +914,22 @@ function imagefield_field_formatter_info() {
       'label' => 'Default',
       'field types' => array('image'),
     ),
+    'imagefield_nodelink' => array(
+      'label' => t('link to node'),
+      'field types' => array('image'),
+    ),
+    'imagefield_imagelink' => array(
+      'label' => t('link to image'),
+      'field types' => array('image'),
+    ),
+    'imagefield_path' => array(
+       'label' => t('path to image'),
+       'field types' => array('image'),
+    ),   
+    'imagefield_url' => array(
+       'label' => t('url to image'),
+       'field types' => array('image'),
+    ),   
   );
   return $formatters;
 }
@@ -928,8 +945,31 @@ function imagefield_field_formatter($field, $item, $formatter, $node = null) {
   if (empty($item['filepath'])) {
     $item = array_merge($item, _imagefield_file_load($item['fid']));
   }
-  if (!empty($item['filepath'])) {
-    return theme('imagefield_image', $item, $item['alt'], $item['title']);
+
+  $parts = explode('_', $formatter);
+  $style = array_pop($parts);
+  $fieldtype = implode('_', $parts);
+
+  $class = 'imagefield imagefield-'. $field['field_name'];
+  
+  switch ($style) {
+    case 'imagelink':
+      $original_image_url = file_create_url($item['filepath']);
+      $imagetag =  theme('imagefield_image', $item, $item['alt'], $item['title'], array('class' => $class));
+      $class .= ' imagefield-imagelink';
+      return l($imagetag, $original_image_url, array('class' => $class), null, null, false, true);
+
+    case 'nodelink':
+      $imagetag =  theme('imagefield_image', $item, $item['alt'], $item['title'], array('class' => $class));
+      $class .= ' imagefield-nodelink';
+      $id = 'imagefield-nodelink-'. $node->nid;
+      return l($imagetag, 'node/'. $node->nid, array('class' => $class, 'id' => $id), null, null, false, true); 
+   
+    case 'url':
+      return theme('imagefield_formatter_url', file_create_url($item['filepath']), array('class' => $class));
+  
+    case 'path':
+      return theme('imagefield_formatter_path', file_create_path($item['filepath']), array('class' => $class));
   }
 }
 
@@ -945,6 +985,18 @@ function _imagefield_file_load($fid = null) {
   // return an empty array if nothing was found.
   return array();
 }
+
+function theme_imagefield_formatter_url($url, $attributes = array()) {
+  $attributes['class'] .= ' imagefield-formatter-path';
+  return '<span '. drupal_attributes($attributes) .'>'. $url .'</span>';
+}
+
+function theme_imagefield_formatter_path($path, $attributes = array()) {
+  drupal_set_message(" theme_imagefield_formatter_path($path, ". print_r($attributes,1) .")");
+  $attributes['class'] .= ' imagefield-formatter-url';
+  return '<span '. drupal_attributes($attributes) .'>'. $path .'</span>';
+}
+
 
 function theme_imagefield_view_image($file, $alt = '', $title = '', $attributes = null, $getsize = true) {
   return theme('imagefield_image', $file, $alt, $title, $attributes , $getsize);
