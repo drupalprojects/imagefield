@@ -666,7 +666,7 @@ function _imagefield_widget_form($node, $field, &$items) {
     '#type' => 'fieldset',
     '#title' => t($field['widget']['label']),
     '#weight' => $field['widget']['weight'],
-    '#description' => t('Changes made to the attachments are not permanent until you save this post.'),
+    '#description' => t('Images are not saved until the form is submitted.'),
     '#collapsible' => true,
     '#collapsed' => false,
     '#tree' => true,
