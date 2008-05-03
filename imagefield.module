@@ -913,7 +913,7 @@ function _imagefield_widget_upload_validate($node, $field, $items, $file) {
  */
 function imagefield_field_formatter_info() {
   $formatters = array(
-    'default' => array(
+    'imagefield_default' => array(
       'label' => 'Default',
       'field types' => array('image'),
     ),
@@ -973,6 +973,9 @@ function imagefield_field_formatter($field, $item, $formatter, $node = null) {
   
     case 'path':
       return theme('imagefield_formatter_path', file_create_path($item['filepath']), array('class' => $class));
+
+    default:
+      return  theme('imagefield_image', $item, $item['alt'], $item['title'], array('class' => $class));
   }
 }
 
