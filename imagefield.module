@@ -1161,6 +1161,7 @@ function imagefield_js() {
   $output =  theme('status_messages') . drupal_render($form);
 
   // We send the updated file attachments form.
+  drupal_set_header('Content-Type: application/json; charset=utf-8');
   echo drupal_to_js(array('status' => true, 'data' => $output));
   exit;
 
