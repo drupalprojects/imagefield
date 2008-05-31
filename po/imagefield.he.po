@@ -93,7 +93,7 @@ msgstr "אם נבחרה תמונה חדשה, התמונה הקיימת תוחל�
 
 #: imagefield.info:0
 msgid "Image"
-msgstr "שדה תמונה"
+msgstr "תמונה"
 
 #: imagefield.info:0
 msgid "Defines an image field type."
