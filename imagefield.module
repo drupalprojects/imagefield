@@ -711,7 +711,7 @@ function _imagefield_widget_form($node, $field, &$items) {
       '#description' => $field['widget']['description'] . $extensions_description,
       '#tree' => false,
       '#weight' => 9,
-      '#attributes' => array('class' => 'imagefield imagefield-'. $fieldname, 'accept' => str_replace(' ', '|', trim($field['widget']['file_extensions']))),
+      '#attributes' => array('class' => 'imagefield imagefield-'. $fieldname, 'accept' => str_replace(' ', ',', trim($field['widget']['file_extensions']))),
     );
 
     $form[$fieldname]['new']['upload'] = array(
