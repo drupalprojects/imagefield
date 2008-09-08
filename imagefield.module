@@ -163,18 +163,16 @@ function imagefield_field_settings($op, $field) {
       $ext = array_pop(explode('.', $file->filename));
       $filename = $field['field_name'] .'.'. $ext;
       // verify the destination exists and is writeable...
-      $dst = file_create_path('imagefield_default_images/'. $filename);
+      $dst = 'imagefield_default_images/'. $filename;
       if (!imagefield_check_directory(dirname($dst))) {
         form_set_error('default_image', t("The default image could not be uploaded. The destination(%d) does not exist or is not writable by the webserver.", array('%d' => dirname($dst))));
         break;
       }  
-      // save the upload to it's resting place.
-      if (!$file = file_save_upload('default_image_upload', $dst)) {
+      // save the upload to its resting place.
+      if (!$file = file_save_upload('default_image_upload', $dst, FILE_EXISTS_REPLACE)) {
         form_set_error('default_image', t("The default image could not be uploaded. Failed saving to destination(%d).", array('%d' => $dst)));
         break;
       }
-      // remove the old one...
-      unlink($field['default_image']['filepath']);
       // set the value of the form_item so we can store this in the settings 
       // from validate.
       form_set_value(array('#parents' => array('default_image')), (array) $file);
