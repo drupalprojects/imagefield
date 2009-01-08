@@ -384,7 +384,7 @@ function imagefield_field($op, $node, $field, &$items, $teaser, $page) {
 
     case 'view':
       $context = $teaser ? 'teaser' : 'full';
-      $formatter = isset($field['display_settings'][$context]['format']) ? $field['display_settings'][$context]['format'] : 'default';
+      $formatter = isset($field['display_settings'][$context]['format']) ? $field['display_settings'][$context]['format'] : 'imagefield_default';
       if ($field['use_default_image'] && empty($items) ) {
         $items[0] = $field['default_image'];
       }
