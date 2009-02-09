@@ -9,10 +9,9 @@ Drupal.imagefieldValidateAutoAttach = function() {
     /**
      *  add client side validation for the input[@file] accept attribute
      */
- 
-    if(this.accept.length>1){
-      accept = this.accept.replace(',','|');
-      v = new RegExp('\\.('+(accept?accept:'')+')$','gi');
+    var accept = this.accept.replace(/,\s*/g, '|');
+    if (accept.length > 1) {
+      var v = new RegExp('\\.(' + accept + ')$', 'gi');
       if (!v.test(this.value)) {
         var error = 'The file ' + this.value + " is not supported.\n";
         error += "Only the following file types are supported: \n" + accept.replace(/\|/g, ', ');
