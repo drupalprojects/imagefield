@@ -1157,8 +1157,8 @@ function imagefield_js() {
   }
   $form = form_builder('imagefield_js', $form);
 
-  $output =  theme('status_messages') . drupal_render($form);
-
+  $output =  theme('status_messages', 'error') . drupal_render($form);
+  
   // We send the updated file attachments form.
   $GLOBALS['devel_shutdown'] = false;
   echo drupal_to_js(array('status' => true, 'data' => $output));
