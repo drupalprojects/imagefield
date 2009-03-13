@@ -760,7 +760,7 @@ function _imagefield_widget_form($node, $field, &$items) {
             '#type' => 'textfield',
             '#title' =>  t('Alternate text'),
             '#default_value' => $file['alt'],
-            '#description' => t('Alternate text to be displayed if the image cannot be displayed.'),
+            '#description' => t('This text will be used by screen readers, search engines, or when the image cannot be loaded.'),
             '#maxlength' => 255,
             '#size' => 10,
           );
