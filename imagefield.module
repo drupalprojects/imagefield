@@ -931,12 +931,18 @@ function imagefield_field_formatter_info() {
  * Implementation of hook_field_formatter().
  */
 function imagefield_field_formatter($field, $item, $formatter, $node = null) {
+  // Use a default image if available.
   if (empty($item['fid']) && $field['use_default_image']) {
     $item = $field['default_image'];
   }
-  // If there is no image on the database, use default.
-  if (empty($item['filepath'])) {
+  // If a filepath isn't loaded, see if we can load one.
+  if (!empty($item['fid']) && empty($item['filepath'])) {
     $item = array_merge($item, _imagefield_file_load($item['fid']));
+  }
+
+  // If we don't have a filepath at this point, no point in continuing.
+  if (empty($item['filepath'])) {
+    return '';
   }
 
   $parts = explode('_', $formatter);
