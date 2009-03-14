@@ -368,7 +368,7 @@ function imagefield_field($op, $node, $field, &$items, $teaser, $page) {
 
     case 'view':
       $context = $teaser ? 'teaser' : 'full';
-      $formatter = isset($field['display_settings'][$context]['format']) ? $field['display_settings'][$context]['format'] : 'imagefield_default';
+      $formatter = isset($field['display_settings'][$context]['format']) ? $field['display_settings'][$context]['format'] : 'default';
       if ($field['use_default_image'] && empty($items) ) {
         $items[0] = $field['default_image'];
       }
@@ -900,11 +900,10 @@ function _imagefield_widget_upload_validate($node, $field, $items, $file) {
 
 /**
  * Implementation of hook_field_formatter_info().
-
  */
 function imagefield_field_formatter_info() {
   $formatters = array(
-    'imagefield_default' => array(
+    'default' => array(
       'label' => 'Default',
       'field types' => array('image'),
     ),

@@ -72,6 +72,17 @@ function imagefield_update_2() {
  * Change default formatter key from 'default' to 'imagefield_default'.
  */
 function imagefield_update_3() {
+  // Update removed, "default" is now the default formatter again.
+  return array();
+}
+
+/**
+ * Change default formatter back from 'imagefield_default' to 'default'.
+ *
+ * CCK always makes the default formatter "default". It's best not to fight it
+ * and make our default the same.
+ */
+function imagefield_update_4() {
   $ret = array();
   include_once(drupal_get_path('module', 'content') .'/content.module');
   include_once(drupal_get_path('module', 'content') .'/content_admin.inc');
@@ -80,8 +91,8 @@ function imagefield_update_3() {
     $needs_update = FALSE;
     $display_settings = unserialize($row['display_settings']);
     foreach (_content_admin_display_contexts() as $context) {
-      if ($display_settings[$context]['format'] == 'default') {
-        $display_settings[$context]['format'] = 'imagefield_default';
+      if ($display_settings[$context]['format'] == 'imagefield_default' || empty($display_settings[$context]['format'])) {
+        $display_settings[$context]['format'] = 'default';
         $needs_update = TRUE;
       }
     }
@@ -92,5 +103,3 @@ function imagefield_update_3() {
   content_clear_type_cache();
   return $ret;
 }
-
-
