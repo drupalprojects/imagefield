@@ -267,7 +267,20 @@ function imagefield_file_update($node, &$file, $field) {
     if (empty($node->old_vid)) {
       _imagefield_file_delete($file, $field['field_name']);
     }
-    return array();
+    if ($field['multiple']) {
+      // If multiple, return an empty array so the file entry is removed from
+      // the content field table.
+      $file = array();
+    }
+    else {
+      // If not multiple, empty the array so it's updated to 0 in the main
+      // content type table. If we don't do this, a reference to a non existent
+      // file (fid) will be left on the content type table.
+      foreach ($file as $key => $value) {
+        $file[$key] = NULL;
+      }
+    }
+    return $file;
   }
   if ($file['fid'] == 'upload') {
     return imagefield_file_insert($node, $file, $field);
@@ -369,7 +382,12 @@ function imagefield_field($op, $node, $field, &$items, $teaser, $page) {
     case 'view':
       $context = $teaser ? 'teaser' : 'full';
       $formatter = isset($field['display_settings'][$context]['format']) ? $field['display_settings'][$context]['format'] : 'default';
-      if ($field['use_default_image'] && empty($items) ) {
+      foreach ($items as $delta => $item) {
+        if ($item['fid'] == 0) {
+          unset($items[$delta]);
+        }
+      }
+      if ($field['use_default_image'] && empty($items)) {
         $items[0] = $field['default_image'];
       }
       foreach ($items as $delta => $item) {
