@@ -118,7 +118,7 @@ function imagefield_update_5() {
       if (isset($db_info['columns']['fid'])) {
         $table = $db_info['table'];
         $column = $db_info['columns']['fid']['column'];
-        $ret[] = update_sql("UPDATE {$table} SET $column = 0 WHERE $column NOT IN (SELECT fid FROM {files})");
+        $ret[] = update_sql("UPDATE {" . $table . "} SET $column = 0 WHERE $column NOT IN (SELECT fid FROM {files})");
       }
     }
   }
