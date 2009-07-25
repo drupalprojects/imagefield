@@ -231,22 +231,22 @@ function imagefield_file_insert($node, &$file, $field) {
     $widget_image_path = $field['widget']['image_path'];
   }
 
-  $filepath = file_create_path($widget_image_path) .'/'. $file['filename'];
-
-  if (imagefield_check_directory($widget_image_path) && $file = file_save_upload((object)$file, $filepath)) {
-    $file = (array)$file;
-    $file['fid'] = db_next_id('{files}_fid');
-    db_query("INSERT into {files} (fid, nid, filename, filepath, filemime, filesize)
-             VALUES (%d, %d, '%s','%s','%s',%d)",
-            $file['fid'], $node->nid, $file['filename'], $file['filepath'], $file['filemime'], $file['filesize']);
-    module_invoke_all('imagefield_file', 'save', $file);
-    return (array)$file;
+  if (imagefield_check_directory($widget_image_path)){ 
+    $filepath = file_create_path($widget_image_path) .'/'. $file['filename'];
+    if ($file = file_save_upload((object) $file, $filepath)) {
+      $file = (array) $file;
+      $file['fid'] = db_next_id('{files}_fid');
+      db_query("INSERT into {files} (fid, nid, filename, filepath, filemime, filesize)
+               VALUES (%d, %d, '%s','%s','%s',%d)",
+              $file['fid'], $node->nid, $file['filename'], $file['filepath'], $file['filemime'], $file['filesize']);
+      module_invoke_all('imagefield_file', 'save', $file);
+      return (array) $file;
+    }
   }
-  else {
-    // Include file name in upload error.
-    form_set_error(null, t('Image upload was unsuccessful.'));
-    return false;
-  }
+  // Either directory creation or the upload failed.
+  // Include file name in upload error.
+  form_set_error(null, t('Image upload was unsuccessful.'));
+  return FALSE;
 }
 
 /**
