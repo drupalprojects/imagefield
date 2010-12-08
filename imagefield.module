@@ -295,6 +295,22 @@ function imagefield_form_content_field_overview_submit(&$form, &$form_state) {
 }
 
 /**
+ * Implementation of hook_filefield_data_info().
+ */
+function imagefield_filefield_data_info() {
+  return array(
+    'alt' => array(
+      'title' => t('Alt text'),
+      'callback' => 'check_plain',
+    ),
+    'title' => array(
+      'title' => t('Title'),
+      'callback' => 'check_plain',
+    ),
+  );
+}
+
+/**
  * @defgroup "Theme Callbacks"
  * @{
  * @see imagefield_theme().
