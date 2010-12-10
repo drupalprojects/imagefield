@@ -137,8 +137,9 @@ function imagefield_widget_settings_form($widget) {
  * to the $form_state variable.
  */
 function _imagefield_widget_settings_default_validate($element, &$form_state) {
-  // Skip this validation if there isn't a default file uploaded at all.
-  if (!is_uploaded_file($_FILES['files']['tmp_name']['default_image_upload'])) {
+  // Skip this validation if there isn't a default file uploaded at all or if
+  // validation has already failed because of another error.
+  if (!is_uploaded_file($_FILES['files']['tmp_name']['default_image_upload']) || form_set_error()) {
     return;
   }
 
