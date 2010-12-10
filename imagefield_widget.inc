@@ -159,12 +159,12 @@ function _imagefield_widget_settings_default_validate($element, &$form_state) {
     return;
   }
 
-  // Remove old image (if any) & clean up database.
+  // Remove the old default image if any.
   $old_default = $form_state['values']['default_image'];
   if (!empty($old_default['fid'])) {
-    if (file_delete(file_create_path($old_default['filepath']))) {
-      db_query('DELETE FROM {files} WHERE fid = %d', $old_default['fid']);
-    }
+    // Set a flag to not count this instance in hook_file_references().
+    $old_default['imagefield_type_name'] = $form_state['values']['type_name'];
+    field_file_delete($old_default);
   }
 
   // Make the file permanent and store it in the form.
