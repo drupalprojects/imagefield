@@ -25,6 +25,30 @@ function imagefield_file_delete($file) {
 }
 
 /**
+ * Implementation of hook_file_references().
+ */
+function imagefield_file_references($file) {
+  $file = (object) $file;
+  $count = 0;
+
+  // We currently only check if images are in use when deleting from content
+  // type default images. All other reference counting is left to FileField.
+  if (isset($file->imagefield_type_name)) {
+    $content_types = content_types();
+    foreach ($content_types as $type_name => $content_type) {
+      if ($type_name != $file->imagefield_type_name) {
+        foreach ($content_type['fields'] as $field_name => $field) {
+          if ($field['widget']['default_image'] && $field['widget']['default_image']['fid'] == $file->fid) {
+            $count++;
+          }
+        }
+      }
+    }
+  }
+  return $count ? array('imagefield' => $count) : NULL;
+}
+
+/**
  * Simple utility function to check if a file is an image.
  */
 function imagefield_file_is_image($file) {
