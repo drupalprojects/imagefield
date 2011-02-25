@@ -1,4 +1,3 @@
-# $Id$
 #
 # HEBREW translation of Drupal (imagefield.module)
 # Copyright Amnon Levav http://levavie.com
