@@ -1,4 +1,3 @@
-// $Id$
 
 ImageField provides an "Image" widget type to CCK. This module leverages the
 functionality of FileField and behaves nearly identically. ImageField widgets
