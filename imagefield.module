@@ -176,7 +176,7 @@ function imagefield_widget_settings($op, $widget) {
  *
  * Assign default properties to item and delegate to FileField.
  */
-function imagefield_widget($form, &$form_state, $field, $items, $delta = 0) {
+function imagefield_widget(&$form, &$form_state, $field, $items, $delta = 0) {
   // Add default values to items.
   // TODO: use CCK's default value callback.
   if (empty($items[$delta])) {
